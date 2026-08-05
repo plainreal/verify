@@ -1,0 +1,17 @@
+# RFC 9116. Security researchers look for this file before anything else.
+
+Contact: mailto:security@plainreal.com
+Expires: 2027-07-31T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://verify.plainreal.com/.well-known/security.txt
+
+# What we most want to hear about, in order:
+#
+#   1. This page reporting a VALID signature on a record that should not
+#      verify. That is the failure that matters more than any other.
+#   2. A record that verifies with the standalone CLI but fails here, or the
+#      reverse.
+#   3. Any outbound network request made by this page. It is designed to make
+#      none, and the CSP is meant to enforce that.
+#
+# Source: https://github.com/plainreal/verify

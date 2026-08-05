@@ -1,0 +1,30 @@
+# The verifier must not be able to make any outbound request. This is enforced
+# by the browser via connect-src 'none', not promised in copy.
+#
+# The same policy is duplicated in a <meta http-equiv> tag inside index.html,
+# because _headers does not apply when the page is saved and opened from file://
+# — and working offline from disk is the point of the page.
+
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), interest-cohort=()
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  # Cross-origin isolation. This page has zero cross-origin resources -- the
+  # fonts and every asset are data: URIs -- so these cost nothing and close the
+  # questions a header scanner will raise.
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+
+/.well-known/security.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=86400
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
