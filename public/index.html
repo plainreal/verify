@@ -374,13 +374,28 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   .rec-summary { color:var(--sec); font-size:13.5px; margin:0 0 8px; }
   .rec-summary .synthetic { color:var(--muted); }
   .rec-meta { color:var(--muted); font-size:12px; font-family:var(--fm); margin-bottom:10px; }
+  /* Height tracks the viewport so a loaded record fills the space available.
+     That is right up to a point and wrong past it: with no ceiling, a tall
+     display gave an EMPTY box over 2000px high sitting beside a 156px verdict
+     card, so the first thing a visitor met was a wall of nothing. The cap still
+     shows around forty lines, more than the fold on most laptops, and a real
+     record scrolls at any height anyway. resize:vertical means anyone who wants
+     more can drag it. */
   textarea {
-    width:100%; height:calc(100vh - 250px); min-height:320px; resize:vertical;
+    width:100%; height:calc(100vh - 250px); min-height:320px; max-height:820px;
+    resize:vertical;
     background:#0C0C13; color:var(--off); border:1px solid var(--bord-mid);
     border-radius:8px; padding:14px; font-family:var(--fm); font-size:12.5px;
     line-height:1.6; tab-size:2; white-space:pre; overflow-wrap:normal;
     overflow-x:auto;
   }
+  /* Empty, the tall box was the whole problem: 156px of verdict card beside
+     911px of nothing, which is the first thing a visitor sees. :placeholder-shown
+     IS "no record pasted yet", so the editor starts at a size that matches an
+     empty left column and grows to the full height the moment there is something
+     to read. No JS, and no layout shift that is not caused by content arriving. */
+  textarea:placeholder-shown { height:380px; }
+
   textarea:focus { outline:2px solid var(--blue); outline-offset:-1px; border-color:var(--blue); }
 
   /* Sits directly ABOVE the editor, not below it: when a field breaks, the
@@ -465,10 +480,25 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
      the rule away from the mark it belongs to. */
   @media (max-width:600px) { .brand svg { width:104px; } }
 
-  /* Self-test band. Sits between the verifier and the footer's small print. */
-  #selftest { margin-top:40px; border-top:1px solid var(--border); padding-top:24px; }
-  #selftest p { max-width:72ch; margin:0 0 14px; color:var(--muted); font-size:13.5px; }
+  /* Self-test band. Sits between the verifier and the footer's small print.
+
+     Prose left, button right, rather than button stacked underneath. Lifting
+     this block out of the footer reintroduced the defect the two-column footer
+     was fixing: a 72ch paragraph alone in a 1160px band left 495px of dead
+     space beside the page's most important invitation. The measure stays 72ch
+     because that is what makes it readable; the button spends the rest of the
+     width and reads as the call it is. Below 900px they stack, which is the
+     right order on a narrow screen anyway. */
+  #selftest { margin-top:40px; border-top:1px solid var(--border); padding-top:24px;
+              display:flex; align-items:center; gap:40px; flex-wrap:wrap; }
+  #selftest p { max-width:72ch; margin:0; color:var(--muted); font-size:13.5px;
+                flex:1 1 420px; }
   #selftest strong { color:var(--sec); font-weight:600; }
+  #selftest button { flex:0 0 auto; }
+  @media (max-width:900px) {
+    #selftest { display:block; }
+    #selftest p { margin:0 0 14px; }
+  }
 
   /* The embedded test suite. Same shapes as the standalone tests.html, drawn
      with this page's tokens so it reads as one document rather than a second
@@ -634,7 +664,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <div class="card">
       <div class="editor-head">
         <h3 style="margin:0">The record</h3>
-        <span class="hint" id="live-hint">Change any character.</span>
+        <span class="hint" id="live-hint"></span>
       </div>
       <p class="rec-summary" id="rec-summary" hidden></p>
       <div class="rec-meta" id="rec-meta"></div>
@@ -3147,7 +3177,10 @@ var SAMPLE_HAS_TSR = false;
     stepsCard.hidden = true;
     lastOutcome = null;
     armed = false;
-    document.getElementById("live-hint").textContent = "Change any character.";
+    // Empty state: there is nothing to change yet, so inviting the reader to
+    // change a character is an instruction that cannot be followed. The
+    // textarea placeholder already says what to do from here.
+    document.getElementById("live-hint").textContent = "";
     document.getElementById("rec-summary").hidden = true;
     document.getElementById("rec-meta").textContent = "";
   }
