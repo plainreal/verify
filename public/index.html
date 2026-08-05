@@ -697,6 +697,36 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       could do any of those things. Close the tab and it is gone.
     </p>
     <p id="footer-source"></p>
+    <!--
+      The one outbound link on the page, and it earns its place: the README and
+      the security policy both tell a reader to check this file against the hash
+      in a SIGNED TAG, and until now the page never said where that tag lives. A
+      reader who saved the file was told to verify against something they had no
+      way to reach.
+
+      It is a link, not a fetch. The page still issues no request of its own and
+      connect-src 'none' still holds; opening this is a navigation the reader
+      chooses. That is also why it does not need the offline treatment the tests
+      needed: the tests had to work offline because the page promises the proof
+      does, whereas nobody expects a repository to load with the network off.
+    -->
+    <p>
+      <strong>Where this came from.</strong>
+      <!--
+        New tab, and rel is not decoration here. This page deliberately stores
+        nothing, so navigating away in the same tab would destroy a record the
+        reader had pasted with no way to recover it. noopener denies the opened
+        page any handle on this one. noreferrer keeps us from telling GitHub
+        where the visitor came from, which is the same posture as the rest of
+        the page rather than a separate rule.
+      -->
+      <a href="https://github.com/plainreal/verify"
+         target="_blank" rel="noopener noreferrer">github.com/plainreal/verify</a>
+      carries the source, the security policy, and each release's SHA-256 inside
+      a signed tag, so you can check the copy you were handed against a key
+      rather than against our word. Opening it needs the network. This page still
+      asks for nothing.
+    </p>
     <p style="color:var(--muted);font-family:var(--fm);font-size:12px">
       PlainReal Verifier v1.0.0
       &nbsp;·&nbsp; RFC 8785 + SHA3-256 (FIPS 202) + Ed25519 (RFC 8032)

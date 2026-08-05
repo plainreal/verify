@@ -248,7 +248,7 @@ and here:
 
 ```
 v1.0.0   sha256(public/index.html)
-         4f79f017f0015219b9c235cc492a634abb313c5c755ee9349918eda9dfad2c89
+         d65481f49926b268c533a19923f44319a455df477616077ab2b8d9bad9dd8662
 ```
 
 Check a copy against it:
