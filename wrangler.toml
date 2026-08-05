@@ -4,7 +4,7 @@
 # Only ./public is served. The repo's own files (README, LICENSE, this config)
 # are deliberately outside the asset directory so they are not part of the site.
 
-name = "verify"
+name = "plainreal-verify"
 compatibility_date = "2026-07-30"
 
 # verify.plainreal.com is the only address this page has. People cite an evidence
