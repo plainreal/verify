@@ -464,6 +464,29 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   footer p { max-width:72ch; margin:0 0 12px; }
   footer strong { color:var(--sec); font-weight:600; }
 
+  /* max-width:none overrides the 72ch reading measure inherited from footer p.
+     That measure exists so prose stays readable; this is not prose, and the cap
+     was the only reason it wrapped. */
+  .colophon {
+    max-width:none; margin:0; padding-top:18px;
+    border-top:1px solid var(--border);
+    display:flex; flex-wrap:wrap; gap:12px 32px;
+    justify-content:space-between; align-items:baseline;
+    font-family:var(--fm); font-size:12px; color:var(--muted);
+  }
+  /* The three refusals are the page's closing claim and the hardest thing here
+     to say honestly, so they are not dimmed to the same level as the standards
+     string next to them. */
+  .colophon .pledge { color:var(--sec); }
+  /* The version is the one ACTIONABLE item in this line: it is what someone
+     quotes in a report, matches against a release, or checks a tag against.
+     Being findable is different from being loud. */
+  .colophon span:first-child { color:var(--sec); }
+  @media (max-width:760px) {
+    .colophon { display:block; }
+    .colophon span { display:block; margin-bottom:5px; }
+  }
+
   /* Masthead. Sized so the lockup reads as a signature on the page rather than
      a banner over it -- the h1 stays the loudest thing here. */
   /* Brand and title were reading as one two-line block: a 152px lockup 14px
@@ -722,9 +745,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       WebCrypto where that supports Ed25519. Details are in the repository.
     </p>
     <p>
-      <strong>Your data.</strong> Whatever you paste stays in this tab. It is
-      not transmitted, stored, cached or logged. There is no code here that
-      could do any of those things. Close the tab and it is gone.
+      <strong>Your data.</strong> Whatever you paste stays in this tab. There is
+      no code here that could transmit, store, cache or log it. Close the tab and
+      it is gone.
     </p>
     <p id="footer-source"></p>
     <!--
@@ -757,10 +780,18 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       rather than against our word. Opening it needs the network. This page still
       asks for nothing.
     </p>
-    <p style="color:var(--muted);font-family:var(--fm);font-size:12px">
-      PlainReal Verifier v1.0.0
-      &nbsp;·&nbsp; RFC 8785 + SHA3-256 (FIPS 202) + Ed25519 (RFC 8032)
-      &nbsp;·&nbsp; no network, no storage, no analytics
+    <!--
+      The colophon carries three separate things: who made this, what it
+      implements, and what it refuses to do. Run together at a 72ch prose
+      measure they wrapped into two lines in the corner of a 1160px footer and
+      read as a leftover paragraph. Spread across the full width, each one is
+      its own statement and the last is the page's closing claim rather than a
+      trailing clause.
+    -->
+    <p class="colophon">
+      <span>PlainReal Verifier v1.0.0</span>
+      <span>RFC 8785 + SHA3-256 (FIPS 202) + Ed25519 (RFC 8032)</span>
+      <span class="pledge">no network, no storage, no analytics</span>
     </p>
   </footer>
 
