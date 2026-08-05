@@ -1,0 +1,72 @@
+PlainReal Verifier
+Copyright 2026 Swapan Shridhar
+
+This product includes software developed for PlainReal.
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+--------------------------------------------------------------------------
+SCOPE OF THIS REPOSITORY
+--------------------------------------------------------------------------
+
+This repository is VERIFICATION ONLY, by design and on purpose.
+
+It reads a record, canonicalizes it (RFC 8785), hashes it
+(SHA3-256, NIST FIPS 202) and checks an Ed25519 signature (RFC 8032).
+
+It deliberately does NOT contain, and must not be extended to contain:
+
+PRODUCER SIDE
+  - a sealer, or any code that produces a signed record
+  - authorization-token issuance, or input_hash pre-commitment binding
+  - WORM commitment, S3 Object Lock sequencing, or retention derivation
+  - RFC 3161 timestamp acquisition
+  - any private key, or any code that signs
+
+VERIFIER SIDE -- and this half is the one that gets added by accident
+  - causality-chain traversal, or following an edge to a parent artifact
+  - renewal / re-anchoring obligation checks
+  - divergence adjudication
+  - forward oversight-regime verification via an index
+
+That boundary is load-bearing, and it is NOT simply "producer versus
+verifier". The Apache-2.0 patent grant in section 3 reaches those claims
+necessarily infringed by a contribution, alone or in combination with the
+Work -- and the Work is whatever this repository contains when it is
+published. Several VERIFIER-side techniques are
+separately patent-pending. They are not practiced here, so they are outside
+the grant today; they enter it the moment code practicing them is committed,
+silently, with no licence file changed and nobody prompted to re-read this.
+
+The safe rule: this repository verifies ONE artifact's signature, and
+nothing else. Anything further belongs in the private repository, or needs a
+deliberate decision first.
+
+--------------------------------------------------------------------------
+PATENTS
+--------------------------------------------------------------------------
+
+Patents pending.
+
+Application numbers are not listed here. U.S. provisional applications are not
+published, so a number you cannot look up is an assertion rather than evidence
+-- and this project does not ask you to accept assertions. They will be named
+here when the corresponding non-provisional applications publish and the text
+becomes publicly readable.
+
+The scope note above is the operative statement for anyone building on this
+code: what is patent-pending is not practiced in this repository, and so is
+outside the Apache-2.0 section 3 grant today.
+
+--------------------------------------------------------------------------
+EMBEDDED TYPEFACES
+--------------------------------------------------------------------------
+
+index.html embeds the Latin subsets of three typefaces as data: URIs, so
+that the page renders identically with no network access. They are used
+verbatim and are licensed under the SIL Open Font License 1.1, reproduced
+in full in OFL.txt:
+
+  Fraunces        Copyright 2018 The Fraunces Project Authors
+  DM Sans         Copyright 2014 The DM Sans Project Authors
+  JetBrains Mono  Copyright 2020 The JetBrains Mono Project Authors
