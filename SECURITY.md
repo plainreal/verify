@@ -39,10 +39,12 @@ things sharply in.
 - The absence of a third-party audit. This is stated in the README; it is a known
   limitation, not a finding.
 - `script-src 'unsafe-inline'` in the Content-Security-Policy. It is unavoidable
-  in a single self-contained file. There is no remote script source, no `eval`,
-  no `new Function`, and no `innerHTML` anywhere in the page, so there is no
-  injection sink for it to widen. A report needs a working injection, not the
-  directive on its own.
+  in a single self-contained file. Nothing in the page is written with
+  `innerHTML`, `insertAdjacentHTML` or `document.write`; every rendered value
+  goes through `textContent`. There is no remote script source, no `eval` and
+  no `new Function`. So there is no injection sink for the directive to widen,
+  and a report needs a working injection rather than the directive on its own.
+  (Grepping for `innerHTML` returns one hit: a comment saying not to use it.)
 - The demo public key embedded in the page. It signs the bundled sample only.
   The matching private key is not in this repository and is not published.
 - A saved copy whose SHA-256 differs from the release. A copy produced by the
