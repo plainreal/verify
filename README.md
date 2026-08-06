@@ -41,7 +41,7 @@ public standards. Evidence that only its producer can check is not evidence.
 
 ---
 
-## The four outcomes
+## The five outcomes
 
 The page keeps these strictly separate, because collapsing them is how a
 verification tool starts lying:
@@ -97,12 +97,11 @@ agree:
 
 1. this README
 2. the `signing_key_id` field inside every sample
-3. `_plainreal-key.plainreal.com` (DNS TXT record)
 
-**Be clear about what that is worth.** All three channels are controlled by
-PlainReal. This is multi-channel publication with third-party-observable history
-(git history, DNS history services), **not** independent key custody. A key
-transparency log is the real answer to that problem and this is not one.
+**Be clear about what that is worth.** Both channels are controlled by
+PlainReal, and both live in this repository. This is publication with
+third-party-observable history (git history), **not** independent key custody. A
+key transparency log is the real answer to that problem and this is not one.
 
 ---
 
@@ -214,7 +213,16 @@ Two implementation notes a reviewer may care about:
 - **The record is never parsed with `JSON.parse`.** It fails open on duplicate
   keys (silently keeping the last) and on integers beyond ±(2^53−1) (silently
   rounding). Both are rejected here, in lock-step with the Go producer.
-**On vendored cryptography.** The usual objection to a hand-written
+- **Ed25519 is vendored, not WebCrypto.** WebCrypto support is uneven, and
+  during testing Safari 18.6's implementation was found to reject *valid*
+  signatures over empty messages, where Go, Chrome and Firefox all accept them.
+  A vendored implementation behaves identically in every browser. It is gated
+  against Go's `crypto/ed25519` over 76 cases, including signature malleability
+  (`S ≥ L`) and non-canonical key encodings.
+
+### On vendored cryptography
+
+**The usual objection** The usual objection to a hand-written
 implementation is side channels, weak randomness and key handling. None of
 those apply here, and the reason is structural: **this code verifies, so it
 holds no secret.** There is no private key, no nonce, no randomness, and no
@@ -229,13 +237,6 @@ hashes, and algebraic checks on the curve itself (`[L]B = O`, associativity,
 encode/decode round-trips). Run them yourself at
 [tests.html](https://verify.plainreal.com/tests.html).
 
-- **Ed25519 is vendored, not WebCrypto.** WebCrypto support is uneven, and
-  during testing Safari 18.6's implementation was found to reject *valid*
-  signatures over empty messages, where Go, Chrome and Firefox all accept them.
-  A vendored implementation behaves identically in every browser. It is gated
-  against Go's `crypto/ed25519` over 76 cases, including signature malleability
-  (`S ≥ L`) and non-canonical key encodings.
-
 ---
 
 ## Checking a copy you were given
@@ -248,7 +249,7 @@ and here:
 
 ```
 v1.0.0   sha256(public/index.html)
-         9de18166cd4ab919c598ec1dac0615510927aa910144caa13fbc2a783c5ec2a9
+         0cb690bd98a4e2c6917f1b1b87b255a6d3e3ccfe0636917dcd0c95136f6df159
 ```
 
 Check a copy against it:
