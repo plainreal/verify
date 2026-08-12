@@ -273,8 +273,8 @@ Each release publishes the SHA-256 of `public/index.html` in its signed git tag
 and here:
 
 ```
-v1.0.1   sha256(public/index.html)
-         f4d9bbe441100b5474982324ae7fe3ca923267a2ec718403053f227370756264
+v1.0.2   sha256(public/index.html)
+         588e220a4fe22a563f6942fade547c401bf24dae0400b8474c82dee8671596c5
 ```
 
 Check a copy against it:
@@ -294,7 +294,7 @@ tampering: such a copy is functionally identical and verifies records exactly th
 same way. It simply is not the published bytes, so the published hash says
 nothing about it. If you need to check a hash, get the file directly.
 
-The release tags are signed. `git tag -v v1.0.1` verifies the signature, and
+The release tags are signed. `git tag -v v1.0.2` verifies the signature, and
 the commits are signed too.
 
 ---
