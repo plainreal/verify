@@ -139,8 +139,16 @@ increasing order of paranoia:
    The policy allows `'unsafe-inline'` for scripts and styles, which a scanner
    will flag. It is unavoidable in a single self-contained file, and the
    mitigation is that there is nothing for it to be exploited *by*: no remote
-   script source, no `eval`, no `innerHTML` anywhere in the file, and every
-   value the page renders is written with `textContent`.
+   script source, no `eval`, no `new Function`, no `document.write`, no
+   `insertAdjacentHTML`, and **nothing is ever assigned to `innerHTML`** —
+   every value the page renders is written with `textContent`.
+
+   Grep and hold us to it. `innerHTML` does appear twice, both times inside a
+   comment saying it is not used, and `outerHTML` appears once, **read** (never
+   written) to serialize the page for the download button. Reading is not an
+   injection sink; the earlier wording here said "no `innerHTML` anywhere in the
+   file", which a ten-second grep falsifies. A claim that cannot survive being
+   checked is worse than a narrower one that can.
 
    `connect-src 'none'` means the *browser* forbids this page from opening any
    network connection. That is enforcement, not a promise in marketing copy.
@@ -168,11 +176,28 @@ own deployment.
 A standalone CLI, `plainreal-verify`, exists and does more than this page: it
 also validates TIER-A field requirements and local invariants, and verifies an
 RFC 3161 timestamp token against a trusted TSA root. It takes any public key,
-has no PlainReal runtime dependencies, and makes no network calls.
+needs no PlainReal service, account or key of ours, and makes no network calls.
 
 **It is not published yet.** When it is, it will be linked here. Until then,
 this page is a demonstration of the verification method, not a production
 audit tool.
+
+## What neither of them checks
+
+Both this page and that CLI check **one record**: whether its bytes are what was
+signed, and — in the CLI's case — whether the record satisfies the requirements
+decidable from that one file.
+
+Records reference the records they came from. Following those references —
+fetching a parent, confirming it is the one that was cited, walking back through
+a chain — is a **different check**, and neither tool performs it. Verifying ten
+records proves ten records, one at a time. It does not prove the workflow that
+produced them, because what ties a workflow together is the edges, and nothing
+here looks at one.
+
+This is a boundary, not a gap to be closed later in this repository. The CLI
+prints the list of what it left unchecked on every run, including a clean pass,
+so the limit travels with the result instead of living only here.
 
 ---
 
@@ -248,8 +273,8 @@ Each release publishes the SHA-256 of `public/index.html` in its signed git tag
 and here:
 
 ```
-v1.0.0   sha256(public/index.html)
-         0cb690bd98a4e2c6917f1b1b87b255a6d3e3ccfe0636917dcd0c95136f6df159
+v1.0.1   sha256(public/index.html)
+         f4d9bbe441100b5474982324ae7fe3ca923267a2ec718403053f227370756264
 ```
 
 Check a copy against it:
@@ -269,7 +294,7 @@ tampering: such a copy is functionally identical and verifies records exactly th
 same way. It simply is not the published bytes, so the published hash says
 nothing about it. If you need to check a hash, get the file directly.
 
-The release tags are signed. `git tag -v v1.0.0` verifies the signature, and
+The release tags are signed. `git tag -v v1.0.1` verifies the signature, and
 the commits are signed too.
 
 ---
@@ -319,7 +344,13 @@ no network access. All three are SIL Open Font License 1.1. See `OFL.txt`.
 ## Reporting a problem
 
 If this page reports a **valid** signature on a record that should not verify,
-that is a serious bug and we want to hear about it immediately. The same goes
-for a record that verifies with the standalone CLI but fails here.
+that is a serious bug and we want to hear about it immediately.
+
+The same goes for **any** disagreement between this page and the standalone
+CLI, in either direction — a record that passes there and fails here, or passes
+here and fails there. Both directions matter, and asking for only one of them
+was itself the bug: v1.0.1 fixed a case where this page reported an artifact as
+intact that the CLI refused, which is exactly the direction the earlier wording
+here did not invite anyone to report.
 
 Open an issue, or write to security@plainreal.com.

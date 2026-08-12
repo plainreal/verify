@@ -12,7 +12,12 @@ SCOPE OF THIS REPOSITORY
 This repository is VERIFICATION ONLY, by design and on purpose.
 
 It reads a record, canonicalizes it (RFC 8785), hashes it
-(SHA3-256, NIST FIPS 202) and checks an Ed25519 signature (RFC 8032).
+(SHA3-256, NIST FIPS 202), checks an Ed25519 signature (RFC 8032), and
+confirms the document carries only the frozen top-level field set the
+published schema defines.
+
+All four operate on ONE artifact, held on its own. None of them consults a
+second record, an index, or anything this repository does not ship.
 
 It deliberately does NOT contain, and must not be extended to contain:
 
@@ -38,9 +43,19 @@ separately patent-pending. They are not practiced here, so they are outside
 the grant today; they enter it the moment code practicing them is committed,
 silently, with no licence file changed and nobody prompted to re-read this.
 
-The safe rule: this repository verifies ONE artifact's signature, and
-nothing else. Anything further belongs in the private repository, or needs a
-deliberate decision first.
+The safe rule: this repository verifies ONE artifact, held on its own.
+Anything that needs a SECOND artifact, an index, or a renewal obligation
+belongs in the private repository, or needs a deliberate decision first.
+
+That is a correction, not a widening. The rule previously read "verifies ONE
+artifact's signature, and nothing else", which stopped describing the code
+when the frozen-field-set check was added in v1.0.1 -- a schema conformance
+check, practicing no patent-pending technique, but more than a signature. The
+line that actually carries the patent boundary is "does it need a second
+artifact", because every technique listed above is a technique for relating
+two or more records. Phrasing the rule that way makes it testable: the
+release preflight fails on any edge traversal, parent fetch, index query or
+renewal check in the payload.
 
 --------------------------------------------------------------------------
 PATENTS

@@ -44,7 +44,13 @@ things sharply in.
   goes through `textContent`. There is no remote script source, no `eval` and
   no `new Function`. So there is no injection sink for the directive to widen,
   and a report needs a working injection rather than the directive on its own.
-  (Grepping for `innerHTML` returns one hit: a comment saying not to use it.)
+
+  Exact counts, so you can check rather than take this on trust: `innerHTML`
+  appears once in `index.html` and once in `tests.html`, both times inside a
+  comment saying not to use it. `outerHTML` appears once, in `index.html`, and
+  it is **read** — never assigned — to serialize the page for the download
+  button. Reading a property is not an injection sink. A report showing
+  otherwise is very much in scope.
 - The demo public key embedded in the page. It signs the bundled sample only.
   The matching private key is not in this repository and is not published.
 - A saved copy whose SHA-256 differs from the release. A copy produced by the
@@ -68,6 +74,6 @@ repeats it in the README. Trust the tag: a hash published only in the repository
 it describes is circular, because whoever can edit one can edit the other.
 
 ```bash
-git tag -v v1.0.0                       # signature, and the hash in the message
+git tag -v v1.0.1                 # signature, and the hash in the message
 shasum -a 256 public/index.html         # compare
 ```
