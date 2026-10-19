@@ -1,0 +1,67 @@
+argv --record testdata/timestamped_record.json --key testdata/timestamped_record.pub.pem --tsr testdata/timestamped_record.tsr
+exit 0
+--- stdout ---
+PlainReal Record Verification
+plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
+─────────────────────────────────────────────────────
+
+THE RECORD
+Record ID:       a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+Evidence Tier:   TIER-A
+Principal:       agent:credit-scoring-v2
+Action Type:     credit_decision
+Created:         2026-04-20T14:30:00.000000000Z
+Model:           openai / gpt-4-turbo-2024-04-09
+Record Hash:     28847586860d4195c0ca9e00dfcee6aa0d4ebe442a09f83e8a9b4014757026a2
+Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b
+
+WHAT WAS CHECKED
+  [x] JSON Parse
+  [x] Record Version
+  [x] TIER-A Validation + Local Invariants
+  [x] Record Hash Computed
+  [x] Signature
+  [x] RFC 3161 Timestamp
+
+VERIFIED
+
+This artifact has NOT been modified since it was signed.
+The signature was produced by the key you supplied on the command line.
+
+CAVEAT: the timestamp's issuer was NOT verified against a trusted root.
+The MessageImprint and the time were checked,
+but a self-signed timestamp would pass those too.
+Supply --tsa-root to anchor the TSA.
+
+WHAT WAS NOT CHECKED
+This reads one record, on its own. Each item below needs something
+this file does not contain, and none of it was fetched or consulted:
+  · the agent's input was what was authorized
+    the record holds only a hash of the input, not the input. Checking it
+    needs the agent_input.json this record came with. [I1]
+  · the parent records exist and are unaltered
+    this record names its parents by hash. Confirming a parent is really
+    there, and really the one named, means fetching it. [I6 chain]
+  · every alternative considered was recorded
+    a candidate that was never written down leaves no trace here. Confirming
+    the set is complete needs the issuing service's own authorization trail.
+    [I7b]
+  · the parent's retention outlives this record's
+    comparing the two retention horizons needs the parent record. [I8b]
+  · parent and child belong to the same tenant
+    the parent's tenant is in the parent, not here. [I11]
+  · no attempt was left out
+    an attempt the producer never recorded is invisible to any check of this
+    file. Detecting omission needs a witness outside the record. This is a
+    stated limit, not a gap to be closed. [I13]
+  · a required human approval actually happened
+    this record can declare that an approval was required. The approval
+    comes AFTER the decision, and records only ever point backwards, so the
+    proof is in the later record, not this one. [I14b]
+
+  Also runs in a browser: https://verify.plainreal.com
+  Source of both:         https://github.com/plainreal/verify
+  A release gate requires the two to agree wherever both check.
+  This tool checks more of a record than the page does.
+  Nothing was contacted to produce this result.
+--- stderr ---

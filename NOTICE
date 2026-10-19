@@ -9,15 +9,18 @@ Licensed under the Apache License, Version 2.0. See LICENSE.
 SCOPE OF THIS REPOSITORY
 --------------------------------------------------------------------------
 
-This repository is VERIFICATION ONLY, by design and on purpose.
+This repository is VERIFICATION ONLY, by design and on purpose. It contains
+two implementations of the same check: a browser page and a standalone CLI.
 
-It reads a record, canonicalizes it (RFC 8785), hashes it
-(SHA3-256, NIST FIPS 202), checks an Ed25519 signature (RFC 8032), and
-confirms the document carries only the frozen top-level field set the
-published schema defines.
+Both read a record, canonicalize it (RFC 8785), hash it (SHA3-256, NIST FIPS
+202) and check an Ed25519 signature (RFC 8032). Both confirm the document
+carries the frozen top-level field set the published schema defines. The CLI
+additionally validates field values, the invariants decidable from a single
+artifact, and an RFC 3161 timestamp token against a caller-supplied root.
 
-All four operate on ONE artifact, held on its own. None of them consults a
-second record, an index, or anything this repository does not ship.
+Every one of those operates on ONE artifact, held on its own. None of them
+consults a second record, an index, or anything this repository does not ship.
+That is what "Level 0" means below, and it is the whole boundary.
 
 It deliberately does NOT contain, and must not be extended to contain:
 
@@ -28,16 +31,16 @@ PRODUCER SIDE
   - RFC 3161 timestamp acquisition
   - any private key, or any code that signs
 
-VERIFIER SIDE -- and this half is the one that gets added by accident
+VERIFIER SIDE. This half is the one that gets added by accident
   - causality-chain traversal, or following an edge to a parent artifact
   - renewal / re-anchoring obligation checks
   - divergence adjudication
   - forward oversight-regime verification via an index
 
-That boundary is load-bearing, and it is NOT simply "producer versus
-verifier". The Apache-2.0 patent grant in section 3 reaches those claims
+That boundary is load-bearing, and "producer versus verifier" does not
+capture it. The Apache-2.0 patent grant in section 3 reaches those claims
 necessarily infringed by a contribution, alone or in combination with the
-Work -- and the Work is whatever this repository contains when it is
+Work, and the Work is whatever this repository contains when it is
 published. Several VERIFIER-side techniques are
 separately patent-pending. They are not practiced here, so they are outside
 the grant today; they enter it the moment code practicing them is committed,
@@ -47,10 +50,16 @@ The safe rule: this repository verifies ONE artifact, held on its own.
 Anything that needs a SECOND artifact, an index, or a renewal obligation
 belongs in the private repository, or needs a deliberate decision first.
 
+Stated as a test rather than a principle: if a change would make either tool
+open a file it was not given, follow a reference to another record, or ask a
+service anything, it does not belong here.
+
 That is a correction, not a widening. The rule previously read "verifies ONE
 artifact's signature, and nothing else", which stopped describing the code
-when the frozen-field-set check was added in v1.0.1 -- a schema conformance
-check, practicing no patent-pending technique, but more than a signature. The
+when the frozen-field-set check was added in v1.0.1, and stopped describing it
+further when the CLI arrived in v1.1.0 with field validation, single-artifact
+invariants and RFC 3161 verification. None of those practices a patent-pending
+technique; all of them are more than a signature. The
 line that actually carries the patent boundary is "does it need a second
 artifact", because every technique listed above is a technique for relating
 two or more records. Phrasing the rule that way makes it testable: the

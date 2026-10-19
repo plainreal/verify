@@ -1,0 +1,44 @@
+argv --key testdata/timestamped_record.pub.pem testdata/timestamped_record.json testdata/bad/tampered.json
+exit 1
+--- stdout ---
+PlainReal Record Verification
+plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
+=====================================================
+
+  [x] testdata/timestamped_record.json
+      signature valid
+  [!] testdata/bad/tampered.json
+      signature verification failed; record may have been tampered with
+
+Checked 2 records INDEPENDENTLY, one at a time: 1 verified, 1 did not.
+
+This says nothing about how these records relate to one another. Each was
+checked on its own. Verifying every record in a workflow proves every record,
+not the workflow: what ties them together is the references between them, and
+those were never followed.
+
+NOT CHECKED, for every record above. Each needs something no single
+record contains, and none of it was fetched:
+  - the agent's input was what was authorized
+    the record holds only a hash of the input, not the input. Checking it
+    needs the agent_input.json this record came with. [I1]
+  - the parent records exist and are unaltered
+    this record names its parents by hash. Confirming a parent is really
+    there, and really the one named, means fetching it. [I6 chain]
+  - every alternative considered was recorded
+    a candidate that was never written down leaves no trace here. Confirming
+    the set is complete needs the issuing service's own authorization trail.
+    [I7b]
+  - the parent's retention outlives this record's
+    comparing the two retention horizons needs the parent record. [I8b]
+  - parent and child belong to the same tenant
+    the parent's tenant is in the parent, not here. [I11]
+  - no attempt was left out
+    an attempt the producer never recorded is invisible to any check of this
+    file. Detecting omission needs a witness outside the record. This is a
+    stated limit, not a gap to be closed. [I13]
+  - a required human approval actually happened
+    this record can declare that an approval was required. The approval
+    comes AFTER the decision, and records only ever point backwards, so the
+    proof is in the later record, not this one. [I14b]
+--- stderr ---

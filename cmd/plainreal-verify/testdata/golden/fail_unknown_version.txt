@@ -1,0 +1,33 @@
+argv --record testdata/bad/unknown_version.json --key testdata/timestamped_record.pub.pem
+exit 2
+--- stdout ---
+PlainReal Record Verification
+plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
+─────────────────────────────────────────────────────
+
+THE RECORD
+Record ID:       a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+Evidence Tier:   TIER-A
+Principal:       agent:credit-scoring-v2
+Action Type:     credit_decision
+Created:         2026-04-20T14:30:00.000000000Z
+Model:           openai / gpt-4-turbo-2024-04-09
+Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b
+
+WHAT WAS CHECKED
+  [x] JSON Parse
+  [!] Record Version: unsupported record version: 9.9.9; supported: 1.0.0
+
+COULD NOT VERIFY
+Reason: unsupported record version: 9.9.9; supported: 1.0.0
+
+No verdict was reached. This says nothing about the record.
+"We could not check it" is not "it is bad".
+
+  Also runs in a browser: https://verify.plainreal.com
+  Source of both:         https://github.com/plainreal/verify
+  A release gate requires the two to agree wherever both check.
+  This tool checks more of a record than the page does.
+  Nothing was contacted to produce this result.
+--- stderr ---
+unsupported record version: 9.9.9; supported: 1.0.0

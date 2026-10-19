@@ -1,0 +1,50 @@
+argv --help
+exit 0
+--- stdout ---
+plainreal-verify 0.0.0-GOLDEN
+
+Standalone record verification CLI.
+Runs with ZERO PlainReal runtime dependencies.
+
+Usage:
+  plainreal-verify --record <path> --key <path>   [--tsr <path>] [--verbose] [--json]
+  plainreal-verify --record <path> --key-hex <hex> [--tsr <path>] [--verbose] [--json]
+  plainreal-verify --version
+  plainreal-verify --version-info
+
+Flags:
+  -color string
+    	Colour output: auto (only when stdout is a terminal), always, or never (default "auto")
+  -json
+    	Output verification result as JSON
+  -key string
+    	Path to PlainReal public key PEM file
+  -key-hex string
+    	PlainReal public key as 64-char hex (alternative to --key)
+  -record value
+    	Path to a sealed record JSON file. Repeat for several; bare paths after the flags are records too
+  -tsa-root string
+    	Path to trusted TSA root certificate(s) (PEM). Anchors the .tsr issuer; without it the timestamp issuer is not verified
+  -tsr string
+    	Path to RFC 3161 timestamp token (.tsr file); optional
+  -verbose
+    	Print all verification steps in detail
+  -version
+    	Print this binary's release version and the schema versions it accepts
+  -version-info
+    	Print the record schema versions this binary accepts, one line, and exit
+
+Exit codes:
+  0  every record given verified
+  1  every record was checked, and at least one did not verify
+  2  something could not be checked at all, or the command was refused
+
+Outcomes (the same five the web verifier reports):
+  VERIFIED                 signature matches; the bytes are what was signed
+  FAILED                   parsed, and the signature does not match the contents
+  DIFFERENT SIGNING KEY    signed by a key other than the one supplied;
+                           NOT a failed signature and NOT evidence of tampering
+  NOT A CONFORMANT RECORD  unreadable, or not shaped like a record;
+                           a statement about structure, not an accusation
+  COULD NOT VERIFY         no verdict reached; says nothing about the record
+--- stderr ---

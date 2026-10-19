@@ -1,0 +1,5 @@
+argv --record testdata/bad/does_not_exist.json --key testdata/timestamped_record.pub.pem
+exit 2
+--- stdout ---
+--- stderr ---
+ERROR: read record file testdata/bad/does_not_exist.json: open testdata/bad/does_not_exist.json: no such file or directory

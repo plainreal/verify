@@ -1,0 +1,40 @@
+argv --record testdata/bad/malleable_signature.json --key testdata/timestamped_record.pub.pem
+exit 1
+--- stdout ---
+PlainReal Record Verification
+plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
+─────────────────────────────────────────────────────
+
+THE RECORD
+Record ID:       a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+Evidence Tier:   TIER-A
+Principal:       agent:credit-scoring-v2
+Action Type:     credit_decision
+Created:         2026-04-20T14:30:00.000000000Z
+Model:           openai / gpt-4-turbo-2024-04-09
+Record Hash:     28847586860d4195c0ca9e00dfcee6aa0d4ebe442a09f83e8a9b4014757026a2
+Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b
+
+WHAT WAS CHECKED
+  [x] JSON Parse
+  [x] Record Version
+  [x] TIER-A Validation + Local Invariants
+  [x] Record Hash Computed
+  [!] Signature: signature does not match record content
+
+FAILED
+Reason: signature verification failed; record may have been tampered with
+
+This artifact could not be verified with the key you supplied.
+Any of these would produce that result:
+  1. The record was modified after it was signed.
+  2. The signature is not a signature over these bytes.
+
+This tool cannot tell you which, and does not guess.
+
+  Also runs in a browser: https://verify.plainreal.com
+  Source of both:         https://github.com/plainreal/verify
+  A release gate requires the two to agree wherever both check.
+  This tool checks more of a record than the page does.
+  Nothing was contacted to produce this result.
+--- stderr ---

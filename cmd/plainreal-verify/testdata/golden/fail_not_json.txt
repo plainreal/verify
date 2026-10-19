@@ -1,0 +1,5 @@
+argv --record testdata/bad/not_json.txt --key testdata/timestamped_record.pub.pem
+exit 2
+--- stdout ---
+--- stderr ---
+ERROR: testdata/bad/not_json.txt is not JSON, so it is not a record; nothing was checked

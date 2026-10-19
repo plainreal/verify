@@ -1,0 +1,403 @@
+{
+  "version": "1.0.0",
+  "note": "Append-only. Never remove vectors. Cross-language JCS+SHA3-256 contract for Go, Python, and Node.js.",
+  "vectors": [
+    {
+      "id": "vector_01",
+      "description": "Simple flat object with unsorted keys",
+      "input": {
+        "b": 2,
+        "a": 1
+      },
+      "expected_jcs": "{\"a\":1,\"b\":2}",
+      "expected_sha3_256_hex": "8d7e099adfa6c36d94857146f8eeb916ad3cbfd6cb24f6e6be4ecc36d366431c"
+    },
+    {
+      "id": "vector_02",
+      "description": "Nested object with keys sorted at each level",
+      "input": {
+        "z": {
+          "b": 2,
+          "a": 1
+        },
+        "a": "first"
+      },
+      "expected_jcs": "{\"a\":\"first\",\"z\":{\"a\":1,\"b\":2}}",
+      "expected_sha3_256_hex": "d7b895e3a56e157d3fd7e422d5fde528e7c96b7558c060bc06215208ba47cb35"
+    },
+    {
+      "id": "vector_03",
+      "description": "Unicode strings including emoji and CJK characters",
+      "input": {
+        "emoji": "🔐",
+        "cjk": "証明",
+        "ascii": "proof"
+      },
+      "expected_jcs": "{\"ascii\":\"proof\",\"cjk\":\"証明\",\"emoji\":\"🔐\"}",
+      "expected_sha3_256_hex": "a228306ba21bbcf5257de30767460a63305e1f406b592d40b7a9d674a0e6297d"
+    },
+    {
+      "id": "vector_04",
+      "description": "Number formatting: integers stay integers, with no decimal point",
+      "input": {
+        "integer": 42,
+        "zero": 0,
+        "negative": -7
+      },
+      "expected_jcs": "{\"integer\":42,\"negative\":-7,\"zero\":0}",
+      "expected_sha3_256_hex": "bda0f31f4748fe51246f5c635fc9b12498bd0ae7e0398a60852580ade1de1483"
+    },
+    {
+      "id": "vector_05",
+      "description": "Boolean and null values",
+      "input": {
+        "flag": true,
+        "empty": null,
+        "disabled": false
+      },
+      "expected_jcs": "{\"disabled\":false,\"empty\":null,\"flag\":true}",
+      "expected_sha3_256_hex": "991926594fecd51710c3326391d748cc923c6bc5f130acd3981e6462e1deb78f"
+    },
+    {
+      "id": "vector_06",
+      "description": "Empty object",
+      "input": {},
+      "expected_jcs": "{}",
+      "expected_sha3_256_hex": "840eb7aa2a9935de63366bacbe9d97e978a859e93dc792a0334de60ed52f8e99"
+    },
+    {
+      "id": "vector_07",
+      "description": "Empty string value and single-character keys",
+      "input": {
+        "a": "",
+        "b": "x"
+      },
+      "expected_jcs": "{\"a\":\"\",\"b\":\"x\"}",
+      "expected_sha3_256_hex": "92b0664369d27dc5f4f39b27614cb4a970786ecc06b191f00c6d96a9569c3733"
+    },
+    {
+      "id": "vector_08",
+      "description": "Array of strings: arrays preserve order and are never sorted",
+      "input": {
+        "tags": [
+          "crypto",
+          "audit",
+          "evidence"
+        ]
+      },
+      "expected_jcs": "{\"tags\":[\"crypto\",\"audit\",\"evidence\"]}",
+      "expected_sha3_256_hex": "be43d734a06662a43e9e19d58dd899e158215ed31a1bf71abbd1e607ebe29524"
+    },
+    {
+      "id": "vector_09",
+      "description": "Array of mixed types",
+      "input": {
+        "mixed": [
+          1,
+          "two",
+          true,
+          null,
+          {
+            "nested": "yes"
+          }
+        ]
+      },
+      "expected_jcs": "{\"mixed\":[1,\"two\",true,null,{\"nested\":\"yes\"}]}",
+      "expected_sha3_256_hex": "826309ec61c089611a1ffd654d464b70d3d6ff8afcf20fa1397e4e6255423b77"
+    },
+    {
+      "id": "vector_10",
+      "description": "String escaping: control characters, backslash, quotes",
+      "input": {
+        "quote": "he said \"hello\"",
+        "tab": "col1\tcol2",
+        "newline": "line1\nline2",
+        "backslash": "path\\to\\file"
+      },
+      "expected_jcs": "{\"backslash\":\"path\\\\to\\\\file\",\"newline\":\"line1\\nline2\",\"quote\":\"he said \\\"hello\\\"\",\"tab\":\"col1\\tcol2\"}",
+      "expected_sha3_256_hex": "10d2de184cdceb3059b29f0f3bcdba2e565b4360ab663ea48fbf9dd685eab14e"
+    },
+    {
+      "id": "vector_11",
+      "description": "Deeply nested 3-level object with all types",
+      "input": {
+        "level1": {
+          "level2": {
+            "level3": {
+              "value": 42,
+              "flag": true,
+              "items": [
+                "a",
+                "b"
+              ]
+            },
+            "name": "deep"
+          },
+          "count": 1
+        },
+        "top": "surface"
+      },
+      "expected_jcs": "{\"level1\":{\"count\":1,\"level2\":{\"level3\":{\"flag\":true,\"items\":[\"a\",\"b\"],\"value\":42},\"name\":\"deep\"}},\"top\":\"surface\"}",
+      "expected_sha3_256_hex": "cdec16063fbab6748e7b9965f3671898a55b1da91a148515b1937c169bca8488"
+    },
+    {
+      "id": "vector_12",
+      "description": "Realistic record-like object exercising all record field types: strings, integers, floats, booleans, null, arrays of objects, nested objects, ISO 8601, hex hashes, enum strings",
+      "input": {
+        "record_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "record_version": "1.0.0",
+        "created_at": "2026-04-17T14:30:00.000Z",
+        "evidence_tier": "TIER-A",
+        "principal_identity": "agent:credit-scoring-v2",
+        "action_type": "credit_decision",
+        "input_hash": "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a",
+        "model_provider": "openai",
+        "model_name": "gpt-4-turbo-2024-04-09",
+        "model_version_hash": "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532",
+        "availability_policy": "BLOCK_ON_SERVICE_UNAVAILABLE",
+        "deployment_mode": "SAAS_MANAGED",
+        "sdk_hash_layer": "SERVICE_ENDPOINT",
+        "registry_validation_status": "VALIDATED",
+        "lock_verification_latency_ms": 47,
+        "instrumentation_coverage": 1.0,
+        "tool_call_log": [
+          {
+            "tool": "credit_api",
+            "timestamp": "2026-04-17T14:30:01.123Z",
+            "status": "success",
+            "cached": false,
+            "metrics": {
+              "latency_ms": 123,
+              "tokens_in": 450
+            }
+          },
+          {
+            "tool": "risk_model",
+            "timestamp": "2026-04-17T14:30:01.456Z",
+            "status": "success",
+            "cached": true,
+            "metrics": {
+              "latency_ms": 87,
+              "tokens_in": 220
+            }
+          }
+        ],
+        "causality_chain_hash": null,
+        "policy_version_hash": "b7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434b"
+      },
+      "expected_jcs": "{\"action_type\":\"credit_decision\",\"availability_policy\":\"BLOCK_ON_SERVICE_UNAVAILABLE\",\"causality_chain_hash\":null,\"created_at\":\"2026-04-17T14:30:00.000Z\",\"deployment_mode\":\"SAAS_MANAGED\",\"evidence_tier\":\"TIER-A\",\"input_hash\":\"a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a\",\"instrumentation_coverage\":1,\"lock_verification_latency_ms\":47,\"model_name\":\"gpt-4-turbo-2024-04-09\",\"model_provider\":\"openai\",\"model_version_hash\":\"3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532\",\"policy_version_hash\":\"b7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434b\",\"principal_identity\":\"agent:credit-scoring-v2\",\"record_id\":\"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\",\"record_version\":\"1.0.0\",\"registry_validation_status\":\"VALIDATED\",\"sdk_hash_layer\":\"SERVICE_ENDPOINT\",\"tool_call_log\":[{\"cached\":false,\"metrics\":{\"latency_ms\":123,\"tokens_in\":450},\"status\":\"success\",\"timestamp\":\"2026-04-17T14:30:01.123Z\",\"tool\":\"credit_api\"},{\"cached\":true,\"metrics\":{\"latency_ms\":87,\"tokens_in\":220},\"status\":\"success\",\"timestamp\":\"2026-04-17T14:30:01.456Z\",\"tool\":\"risk_model\"}]}",
+      "expected_sha3_256_hex": "10184123c16771f4bd632fd81d9fdc7c2090951a19841e2e76736d77dcd89b5a"
+    },
+    {
+      "id": "vector_13",
+      "description": "RAG evidence bundle: an array of objects with float score fields, which exercises float-in-nested-object serialization",
+      "input": {
+        "rag_evidence_bundle": [
+          {
+            "content": "Credit score threshold is 650",
+            "score": 0.873,
+            "source": "policy://credit/v2"
+          },
+          {
+            "content": "DTI ratio must not exceed 0.43",
+            "score": 0.912,
+            "source": "policy://credit/v2"
+          }
+        ]
+      },
+      "expected_jcs": "{\"rag_evidence_bundle\":[{\"content\":\"Credit score threshold is 650\",\"score\":0.873,\"source\":\"policy://credit/v2\"},{\"content\":\"DTI ratio must not exceed 0.43\",\"score\":0.912,\"source\":\"policy://credit/v2\"}]}",
+      "expected_sha3_256_hex": "902d1a2fe7f0c3eaf02162a320764f9c0b65077e813e855552f22d75b6878695"
+    },
+    {
+      "id": "vector_14",
+      "description": "Float edge cases within ECMAScript-safe range: negative zero collapse, integer-valued float coercion, exact IEEE 754 fractions. Excludes values requiring scientific notation (covered in Week 1 implementation tests).",
+      "input": {
+        "neg_zero": -0.0,
+        "pos_zero": 0.0,
+        "int_float": 1.0,
+        "half": 0.5,
+        "eighth": 0.125,
+        "small_safe": 0.001,
+        "neg_frac": -3.14,
+        "large_int_float": 1000000.0
+      },
+      "expected_jcs": "{\"eighth\":0.125,\"half\":0.5,\"int_float\":1,\"large_int_float\":1000000,\"neg_frac\":-3.14,\"neg_zero\":0,\"pos_zero\":0,\"small_safe\":0.001}",
+      "expected_sha3_256_hex": "c981dc6730cd06455a744ca11876dd0cb629aa0960971425d1f4428afdb65499"
+    },
+    {
+      "id": "vector_15",
+      "description": "Non-BMP key sort. UTF-16 surrogate pair ordering differs from Unicode code point ordering. U+1D11E (𝄞, surrogate pair D834 DD1E) sorts BEFORE U+FFFD (single code unit FFFD) because D834 < FFFD in UTF-16, which is the OPPOSITE of code point order.",
+      "input": {
+        "�": "replacement",
+        "𝄞": "g-clef"
+      },
+      "expected_jcs": "{\"𝄞\":\"g-clef\",\"�\":\"replacement\"}",
+      "expected_sha3_256_hex": "6689b34a5188f7ae8be9dadcf23a74b21889008a9115b9296549cc9c8899490d"
+    },
+    {
+      "id": "vector_16",
+      "description": "Safe-integer boundary: the largest and smallest exactly-representable IEEE-754 integers (plus/minus (2^53-1)) canonicalize to their exact decimal literal in every language. Integers beyond this magnitude are REJECTED by both reference implementations, because they cannot be rounded without precision loss, so they cannot appear as a positive vector; that rejection is covered by dedicated unit tests.",
+      "input": {
+        "max_safe_id": 9007199254740991,
+        "min_safe_id": -9007199254740991
+      },
+      "expected_jcs": "{\"max_safe_id\":9007199254740991,\"min_safe_id\":-9007199254740991}",
+      "expected_sha3_256_hex": "bb2a0b3cf93fd678cf50578fd11b6ac0ed8aa082640bc4de96f752de42d9539a"
+    },
+    {
+      "id": "vector_17",
+      "description": "execution_context.llm_calls[].params, the fixed key set the schema defines for a model call. seed is a DECIMAL STRING, not a number: a 64-bit seed exceeds JCS's plus/minus (2^53-1) safe-integer window, so a numeric seed would be REJECTED at canonicalization (Go) or silently rounded to a different value (Python), and the record_hash contract requires both languages to agree byte-for-byte. temperature 0 is an integer-valued float that must canonicalize to \"0\", not \"0.0\". top_p null means \"not set by this call\", a fact that is signed rather than an omitted key.",
+      "input": {
+        "top_p": null,
+        "temperature": 0,
+        "seed": "18446744073709551615",
+        "response_schema_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "max_tokens": 1024
+      },
+      "expected_jcs": "{\"max_tokens\":1024,\"response_schema_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"seed\":\"18446744073709551615\",\"temperature\":0,\"top_p\":null}",
+      "expected_sha3_256_hex": "2d8e31b9c56f05d97bafe8909c033733c78bbe07db89b0c13a8705bf49a7c27a"
+    },
+    {
+      "id": "vector_18",
+      "description": "provenance envelope for an ad-hoc ROOT, a record with no parents. upstream is the empty ARRAY sentinel, never null: [] and null are different documents with different hashes, and the sentinel rule is what keeps a root's causality_chain_hash reproducible across languages.",
+      "input": {
+        "workflow_run_id": "c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f",
+        "schema_version": "1.0.0",
+        "workflow_id": "adhoc",
+        "upstream": [],
+        "workflow_node_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "workflow_definition_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected_jcs": "{\"schema_version\":\"1.0.0\",\"upstream\":[],\"workflow_definition_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"workflow_id\":\"adhoc\",\"workflow_node_id\":\"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\",\"workflow_run_id\":\"c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f\"}",
+      "expected_sha3_256_hex": "1f7588b3d1f0c50385e8c7319995a19c27ac1acad17ae03e1ea9a77300be8ac4"
+    },
+    {
+      "id": "vector_19",
+      "description": "provenance envelope with TWO upstream edges in the total order the schema defines: ascending by record_hash, then consumed_output_selector, then relationship. Arrays preserve order and are NOT sorted by JCS, so the ordering is the producer's responsibility and part of what gets signed; a verifier rejects an unsorted array rather than sorting it. Exercises objects nested inside an array inside an envelope, which is where a naive canonicalizer diverges.",
+      "input": {
+        "schema_version": "1.0.0",
+        "workflow_id": "wf-loan-2agent",
+        "workflow_run_id": "c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f",
+        "workflow_node_id": "adjudicator",
+        "workflow_definition_hash": "3f2a1b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a",
+        "upstream": [
+          {
+            "relationship": "DERIVED_FROM",
+            "record_id": "11111111-1111-4111-8111-111111111111",
+            "record_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "consumed_output_selector": "/execution_result",
+            "consumed_output_hash": "4f9a2c1e8b7d6f5a3c2e1d0b9a8f7e6d5c4b3a2918273645546372819a0b1c2d",
+            "parent_signing_key_id": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+          },
+          {
+            "relationship": "APPROVES",
+            "record_id": "22222222-2222-4222-8222-222222222222",
+            "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "consumed_output_selector": "",
+            "consumed_output_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "parent_signing_key_id": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+          }
+        ]
+      },
+      "expected_jcs": "{\"schema_version\":\"1.0.0\",\"upstream\":[{\"consumed_output_hash\":\"4f9a2c1e8b7d6f5a3c2e1d0b9a8f7e6d5c4b3a2918273645546372819a0b1c2d\",\"consumed_output_selector\":\"/execution_result\",\"parent_signing_key_id\":\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\",\"record_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"record_id\":\"11111111-1111-4111-8111-111111111111\",\"relationship\":\"DERIVED_FROM\"},{\"consumed_output_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"consumed_output_selector\":\"\",\"parent_signing_key_id\":\"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd\",\"record_hash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"record_id\":\"22222222-2222-4222-8222-222222222222\",\"relationship\":\"APPROVES\"}],\"workflow_definition_hash\":\"3f2a1b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a\",\"workflow_id\":\"wf-loan-2agent\",\"workflow_node_id\":\"adjudicator\",\"workflow_run_id\":\"c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f\"}",
+      "expected_sha3_256_hex": "87718f45a04c42cb3114e5845cf14c24d4195fb53aa612b8ad27dd4f8318766e"
+    },
+    {
+      "id": "vector_20",
+      "description": "governance_context envelope: empty-array sentinels for data_subject_refs, a populated correlation_ids, and the opaque-token grammar. Every value here is an opaque identifier or a salted ref, because raw payloads are forbidden in this envelope, so there is no free text to canonicalize. [I4]",
+      "input": {
+        "tenant_id": "tenant:acme",
+        "schema_version": "1.0.0",
+        "environment": "PROD",
+        "oversight_mode": "SOLELY_AUTOMATED",
+        "data_subject_refs": [],
+        "retention_class": "STANDARD_7Y",
+        "accountable_party": "org:acme-lending",
+        "correlation_ids": [
+          "case:CRM-88213",
+          "batch:2026-04-20_a.1"
+        ]
+      },
+      "expected_jcs": "{\"accountable_party\":\"org:acme-lending\",\"correlation_ids\":[\"case:CRM-88213\",\"batch:2026-04-20_a.1\"],\"data_subject_refs\":[],\"environment\":\"PROD\",\"oversight_mode\":\"SOLELY_AUTOMATED\",\"retention_class\":\"STANDARD_7Y\",\"schema_version\":\"1.0.0\",\"tenant_id\":\"tenant:acme\"}",
+      "expected_sha3_256_hex": "e19ef653cab0247f6f10312eba2884c219d6813f1e618b180c512d14a89ef24a"
+    },
+    {
+      "id": "vector_21",
+      "description": "execution_context envelope with a REAL RETRY: llm_calls[0] is a TIMEOUT attempt carrying the 64-zero output_hash and finish_reason \"NONE\" sentinels, and llm_calls[1] is the OK attempt that decisive_seq names. Every attempt is an entry, failures included, since omitting one is how retry-until-flattering would hide. [I13] Exercises the full envelope nesting: objects in arrays, with a nested params object in each.",
+      "input": {
+        "schema_version": "1.0.0",
+        "agent_version": "credit-adjudicator@1.4.2",
+        "decisive_seq": 2,
+        "llm_calls": [
+          {
+            "seq": 1,
+            "model_provider": "openai",
+            "model_name": "gpt-4o-2024-08-06",
+            "params": {
+              "temperature": 0,
+              "top_p": null,
+              "seed": null,
+              "max_tokens": 1024,
+              "response_schema_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "status": "TIMEOUT",
+            "prompt_hash": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+            "output_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "finish_reason": "NONE",
+            "started_at": "2026-04-20T14:30:00.100Z",
+            "ended_at": "2026-04-20T14:30:00.700Z"
+          },
+          {
+            "seq": 2,
+            "model_provider": "openai",
+            "model_name": "gpt-4o-2024-08-06",
+            "params": {
+              "temperature": 0,
+              "top_p": 0.95,
+              "seed": "42",
+              "max_tokens": 1024,
+              "response_schema_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "status": "OK",
+            "prompt_hash": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+            "output_hash": "9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706f5e4d3c2b1a0",
+            "finish_reason": "stop",
+            "started_at": "2026-04-20T14:30:00.800Z",
+            "ended_at": "2026-04-20T14:30:01.900Z"
+          }
+        ],
+        "retrievals": [],
+        "guardrails": [
+          {
+            "name": "pii-scrubber",
+            "version": "2.1",
+            "stage": "input",
+            "verdict": "PASS"
+          }
+        ]
+      },
+      "expected_jcs": "{\"agent_version\":\"credit-adjudicator@1.4.2\",\"decisive_seq\":2,\"guardrails\":[{\"name\":\"pii-scrubber\",\"stage\":\"input\",\"verdict\":\"PASS\",\"version\":\"2.1\"}],\"llm_calls\":[{\"ended_at\":\"2026-04-20T14:30:00.700Z\",\"finish_reason\":\"NONE\",\"model_name\":\"gpt-4o-2024-08-06\",\"model_provider\":\"openai\",\"output_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"params\":{\"max_tokens\":1024,\"response_schema_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"seed\":null,\"temperature\":0,\"top_p\":null},\"prompt_hash\":\"1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b\",\"seq\":1,\"started_at\":\"2026-04-20T14:30:00.100Z\",\"status\":\"TIMEOUT\"},{\"ended_at\":\"2026-04-20T14:30:01.900Z\",\"finish_reason\":\"stop\",\"model_name\":\"gpt-4o-2024-08-06\",\"model_provider\":\"openai\",\"output_hash\":\"9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706f5e4d3c2b1a0\",\"params\":{\"max_tokens\":1024,\"response_schema_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"seed\":\"42\",\"temperature\":0,\"top_p\":0.95},\"prompt_hash\":\"1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b\",\"seq\":2,\"started_at\":\"2026-04-20T14:30:00.800Z\",\"status\":\"OK\"}],\"retrievals\":[],\"schema_version\":\"1.0.0\"}",
+      "expected_sha3_256_hex": "0257cbab77629741b76265fc4df5ce6eb1732f9b18de1462ada5d7b9a69750e3"
+    },
+    {
+      "id": "vector_22",
+      "description": "execution_context.retrievals[] with the fixed params key set. min_score 0.15 is a float with no exact binary representation, the case where Python's repr() and ECMAScript's Number.toString() must be made to agree; top_k is an integer that must not acquire a decimal point. status is the same attempt enum the model calls use: a retrieval carries no output_hash of its own, so the binding runs from the rag_evidence_bundle side.",
+      "input": {
+        "seq": 1,
+        "query_hash": "7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d",
+        "index_id": "lending_policy_v1",
+        "index_version": "v1",
+        "embedding_model": "lexical-overlap@1",
+        "status": "OK",
+        "params": {
+          "reranker": "none",
+          "top_k": 6,
+          "min_score": 0.15,
+          "filters_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "expected_jcs": "{\"embedding_model\":\"lexical-overlap@1\",\"index_id\":\"lending_policy_v1\",\"index_version\":\"v1\",\"params\":{\"filters_hash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"min_score\":0.15,\"reranker\":\"none\",\"top_k\":6},\"query_hash\":\"7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d\",\"seq\":1,\"status\":\"OK\"}",
+      "expected_sha3_256_hex": "b1978eae83c8addea38f89bb4af1ca065c397e23fb43c97a842d749a601a995b"
+    }
+  ]
+}

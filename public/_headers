@@ -3,7 +3,7 @@
 #
 # The same policy is duplicated in a <meta http-equiv> tag inside index.html,
 # because _headers does not apply when the page is saved and opened from file://
-# — and working offline from disk is the point of the page.
+#   and working offline from disk is the point of the page.
 
 /*
   Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'

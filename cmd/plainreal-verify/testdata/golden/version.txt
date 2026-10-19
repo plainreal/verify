@@ -1,0 +1,6 @@
+argv --version
+exit 0
+--- stdout ---
+plainreal-verify 0.0.0-GOLDEN
+record schema versions accepted: 1.0.0
+--- stderr ---

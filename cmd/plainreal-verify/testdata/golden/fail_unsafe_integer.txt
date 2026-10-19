@@ -1,0 +1,17 @@
+argv --record testdata/bad/unsafe_integer.json --key testdata/timestamped_record.pub.pem
+exit 1
+--- stdout ---
+PlainReal Record Verification
+plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
+=====================================================
+
+Record:          testdata/bad/unsafe_integer.json
+
+Result: NOT A CONFORMANT RECORD
+Reason: compute record hash: record: canonicalize artifact bytes: integer-valued number 9007199254740993 exceeds the safe range [-(2^53-1), 2^53-1]; represent large integers as JSON strings
+
+This file is not a conformant record. That is a judgment about the
+document, not a problem reading it: it was read, and it does not
+conform to the schema this binary verifies.
+--- stderr ---
+compute record hash: record: canonicalize artifact bytes: integer-valued number 9007199254740993 exceeds the safe range [-(2^53-1), 2^53-1]; represent large integers as JSON strings

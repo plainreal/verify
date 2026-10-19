@@ -1,0 +1,37 @@
+argv --record testdata/timestamped_record.json --key-hex 2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881
+exit 1
+--- stdout ---
+PlainReal Record Verification
+plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
+─────────────────────────────────────────────────────
+
+THE RECORD
+Record ID:       a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+Evidence Tier:   TIER-A
+Principal:       agent:credit-scoring-v2
+Action Type:     credit_decision
+Created:         2026-04-20T14:30:00.000000000Z
+Model:           openai / gpt-4-turbo-2024-04-09
+Record Hash:     28847586860d4195c0ca9e00dfcee6aa0d4ebe442a09f83e8a9b4014757026a2
+Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b
+
+WHAT WAS CHECKED
+  [x] JSON Parse
+  [x] Record Version
+  [x] TIER-A Validation + Local Invariants
+  [x] Record Hash Computed
+  [!] Signature: record declares signing_key_id dd0148d7d15aad9d…, the supplied key is e8a825047e13f637…
+
+DIFFERENT SIGNING KEY
+Reason: signed by a different key: this is not the public key that signed this record, which is NOT the same as the record having been altered
+
+This record was signed by a key other than the one you supplied.
+That is NOT a failed signature and NOT evidence of tampering.
+The record names the key that signed it; supply that key to check it.
+
+  Also runs in a browser: https://verify.plainreal.com
+  Source of both:         https://github.com/plainreal/verify
+  A release gate requires the two to agree wherever both check.
+  This tool checks more of a record than the page does.
+  Nothing was contacted to produce this result.
+--- stderr ---

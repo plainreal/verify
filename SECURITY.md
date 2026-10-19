@@ -48,7 +48,7 @@ things sharply in.
   Exact counts, so you can check rather than take this on trust: `innerHTML`
   appears once in `index.html` and once in `tests.html`, both times inside a
   comment saying not to use it. `outerHTML` appears once, in `index.html`, and
-  it is **read** — never assigned — to serialize the page for the download
+  it is **read**, never assigned, to serialize the page for the download
   button. Reading a property is not an injection sink. A report showing
   otherwise is very much in scope.
 - The demo public key embedded in the page. It signs the bundled sample only.
@@ -62,10 +62,11 @@ things sharply in.
 
 ## What you can expect
 
-A human reply, from one person, not a queue. If the report is valid, a fix and a
-new signed release; if it is not, the reasoning rather than a form letter. If
-something is a real limitation rather than a defect, it gets written into the
-README where readers will see it.
+A human reply, from one person. There is no queue and no form letter. A valid
+report gets a fix and a new signed release; an invalid one gets the reasoning
+that made it invalid, so you can argue with it. Where a report turns out to
+describe a real limitation instead of a defect, it goes into the README where
+readers will see it.
 
 ## Verifying a release yourself
 
@@ -74,6 +75,6 @@ repeats it in the README. Trust the tag: a hash published only in the repository
 it describes is circular, because whoever can edit one can edit the other.
 
 ```bash
-git tag -v v1.0.2                 # signature, and the hash in the message
+git tag -v v1.1.0                 # signature, and the hash in the message
 shasum -a 256 public/index.html         # compare
 ```

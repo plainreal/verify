@@ -1,0 +1,5 @@
+argv --key testdata/timestamped_record.pub.pem
+exit 2
+--- stdout ---
+--- stderr ---
+ERROR: no record given. Use --record <path>, or list paths after the flags.

@@ -1,0 +1,17 @@
+argv --record testdata/bad/extra_field.json --key testdata/timestamped_record.pub.pem
+exit 1
+--- stdout ---
+PlainReal Record Verification
+plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
+=====================================================
+
+Record:          testdata/bad/extra_field.json
+
+Result: NOT A CONFORMANT RECORD
+Reason: testdata/bad/extra_field.json is not a conformant record: record: unknown top-level key "invented_field" (the 33-field list is frozen; new capability goes inside a versioned envelope, never as a new top-level field)
+
+This file is not a conformant record. That is a judgment about the
+document, not a problem reading it: it was read, and it does not
+conform to the schema this binary verifies.
+--- stderr ---
+testdata/bad/extra_field.json is not a conformant record: record: unknown top-level key "invented_field" (the 33-field list is frozen; new capability goes inside a versioned envelope, never as a new top-level field)
