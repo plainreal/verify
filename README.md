@@ -282,7 +282,7 @@ A record that verifies:
 ```
 $ plainreal-verify --record testdata/timestamped_record.json --key testdata/timestamped_record.pub.pem
 PlainReal Record Verification
-plainreal-verify 1.1.0  ·  record schema 1.0.0
+plainreal-verify 1.1.1  ·  record schema 1.0.0
 ─────────────────────────────────────────────────────
 
 THE RECORD
@@ -352,7 +352,7 @@ The same record with one byte changed:
 ```
 $ plainreal-verify --record testdata/bad/tampered.json --key testdata/timestamped_record.pub.pem
 PlainReal Record Verification
-plainreal-verify 1.1.0  ·  record schema 1.0.0
+plainreal-verify 1.1.1  ·  record schema 1.0.0
 ─────────────────────────────────────────────────────
 
 THE RECORD
@@ -398,7 +398,7 @@ and the tool says so rather than implying tampering:
 ```
 $ plainreal-verify --record testdata/timestamped_record.json --key-hex 2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881
 PlainReal Record Verification
-plainreal-verify 1.1.0  ·  record schema 1.0.0
+plainreal-verify 1.1.1  ·  record schema 1.0.0
 ─────────────────────────────────────────────────────
 
 THE RECORD
@@ -440,7 +440,7 @@ Several records at once, each judged on its own:
 ```
 $ plainreal-verify --key testdata/timestamped_record.pub.pem testdata/timestamped_record.json testdata/bad/tampered.json
 PlainReal Record Verification
-plainreal-verify 1.1.0  ·  record schema 1.0.0
+plainreal-verify 1.1.1  ·  record schema 1.0.0
 =====================================================
 
   [x] testdata/timestamped_record.json
@@ -522,7 +522,7 @@ boundary, not a backlog.
 The quickest route, if you have Go:
 
 ```bash
-go install github.com/plainreal/verify/cmd/plainreal-verify@v1.1.0
+go install github.com/plainreal/verify/cmd/plainreal-verify@v1.1.1
 ```
 
 That builds from source the Go module proxy fetched by tag, so there is no
@@ -547,7 +547,7 @@ only as trustworthy as whoever can write there. The signed tag is the check
 that does not have that problem:
 
 ```bash
-git tag -v v1.1.0        # the signature, and the binary hashes
+git tag -v v1.1.1        # the signature, and the binary hashes
 shasum -a 256 plainreal-verify-*         # compare against the tag message
 ```
 
@@ -570,7 +570,7 @@ printf 'swapan@plainreal.com %s\n' "$(cat /tmp/plainreal.pub)" \
   >> ~/.ssh/allowed_signers
 
 git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
-git tag -v v1.1.0
+git tag -v v1.1.1
 ```
 
 That key is published by GitHub, on an account separate from this repository,
@@ -587,9 +587,9 @@ our published hash becomes something you can confirm for yourself.
 
 ```bash
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-  go build -trimpath -ldflags="-buildid= -X main.Version=1.1.0" \
-  -o plainreal-verify-1.1.0-linux-amd64 ./cmd/plainreal-verify
-shasum -a 256 plainreal-verify-1.1.0-linux-amd64
+  go build -trimpath -ldflags="-buildid= -X main.Version=1.1.1" \
+  -o plainreal-verify-1.1.1-linux-amd64 ./cmd/plainreal-verify
+shasum -a 256 plainreal-verify-1.1.1-linux-amd64
 ```
 
 Set `GOOS` and `GOARCH` to the target you want: `darwin/arm64`,
@@ -746,8 +746,8 @@ Each release publishes the SHA-256 of `public/index.html` in its signed git tag
 and here:
 
 ```
-v1.1.0   sha256(public/index.html)
-         1f2b081b5b82aa3c01e72665999e353686992980781cc885ac6d1f905430a4cc
+v1.1.1   sha256(public/index.html)
+         f3dd80526c0c31b08b50a94b91156af1c2002f349b4270c1e727f5dc8188b690
 ```
 
 Check a copy against it:
@@ -760,21 +760,31 @@ The output is the hash then the filename, and the hash is what you compare
 against the block above:
 
 ```
-1f2b081b5b82aa3c01e72665999e353686992980781cc885ac6d1f905430a4cc  the-file-you-were-given.html
+f3dd80526c0c31b08b50a94b91156af1c2002f349b4270c1e727f5dc8188b690  the-file-you-were-given.html
 ```
 
 If the two strings are not identical, character for character, do not trust it. Get it from
 https://verify.plainreal.com or from this repository.
 
-**Hash only a copy you downloaded directly.** Use `curl`, `wget`, or right-click →
-Save Link As on `public/index.html`. A copy produced by this page's own save
-button, or by the browser's Save Page As, is re-serialised from the live DOM and
-will **not** match the published hash. That is expected and is not a sign of
-tampering: such a copy is functionally identical and verifies records exactly the
-same way. It is not the published bytes, so the published hash says
-nothing about it. If you need to check a hash, get the file directly.
+**Hash only a copy you downloaded directly.** This fetches the published bytes:
 
-The release tags are signed. `git tag -v v1.1.0` verifies the signature, and
+```bash
+curl -L https://verify.plainreal.com/ -o verify.html
+shasum -a 256 verify.html
+```
+
+`-L` matters. The site serves the page at `/` and redirects `/index.html` to
+it, so `curl` without `-L` writes an **empty file** and you get
+`e3b0c442…`, which is the SHA-256 of nothing. That looks like a failed check
+and is not one. `wget` follows the redirect on its own and needs no flag.
+
+A copy produced by this page's own save button, or by the browser's Save Page
+As, is re-serialised from the live DOM and will **not** match the published
+hash. That is expected and is not a sign of tampering: such a copy is
+functionally identical and verifies records exactly the same way. It is simply
+not the published bytes, so the published hash says nothing about it.
+
+The release tags are signed. `git tag -v v1.1.1` verifies the signature, and
 the commits are signed too.
 
 ---

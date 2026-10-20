@@ -56,7 +56,10 @@ things sharply in.
 - A saved copy whose SHA-256 differs from the release. A copy produced by the
   page's own save button, or by the browser's Save Page As, is re-serialised from
   the live DOM. That is expected and is documented in the README. Fetch the file
-  directly before comparing hashes.
+  directly before comparing hashes, with `curl -L` or `wget`: the page is served
+  at `/` and `/index.html` redirects to it, so `curl` without `-L` saves nothing
+  and hashes to `e3b0c442...`, the SHA-256 of an empty file. That is not a
+  mismatch, and a report of one will be closed with this paragraph.
 - Missing security headers on a copy opened from `file://`. `_headers` cannot
   apply there, which is why the policy is duplicated in a `<meta>` tag.
 
@@ -75,6 +78,6 @@ repeats it in the README. Trust the tag: a hash published only in the repository
 it describes is circular, because whoever can edit one can edit the other.
 
 ```bash
-git tag -v v1.1.0                 # signature, and the hash in the message
+git tag -v v1.1.1                 # signature, and the hash in the message
 shasum -a 256 public/index.html         # compare
 ```

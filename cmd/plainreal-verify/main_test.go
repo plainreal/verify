@@ -1303,7 +1303,7 @@ func TestVerify_Output_IncludesCaptureFields(t *testing.T) {
 // Import discipline — zero PlainReal-runtime dependencies
 // =============================================================================
 
-// TestZeroPlainRealInfrastructureImports parses cmd/verify/main.go on every
+// TestZeroPlainRealInfrastructureImports parses cmd/plainreal-verify/main.go on every
 // run and fails if it imports any PlainReal package that pulls in runtime
 // infrastructure (storage, auth, sdk, absa). The verifier depends on
 // 'core' for pure types and pure crypto — anything else would break the
@@ -1403,7 +1403,7 @@ func requireCheck(t *testing.T, checks []Check, name string, passed bool) {
 // =============================================================================
 //
 // This is a minimized, local variant of storage/timestamp_test.go's mockTSA.
-// Duplicated intentionally so cmd/verify/ has no test-time dependency on
+// Duplicated intentionally so cmd/plainreal-verify/ has no test-time dependency on
 // the storage package — keeping the verifier's test harness as clean as
 // the production binary.
 
@@ -2577,7 +2577,7 @@ func TestCLI_TSARoot_LoaderErrors(t *testing.T) {
 // can exercise the RFC 3161 path without a network, a TSA account, or this
 // repository's test helpers.
 //
-//	PLAINREAL_WRITE_TSR_FIXTURES=1 go test ./cmd/verify/ -run TestGenerateTSRFixtures
+//	PLAINREAL_WRITE_TSR_FIXTURES=1 go test ./cmd/plainreal-verify/ -run TestGenerateTSRFixtures
 //
 // The token is signed by a MOCK TSA generated here, and the fixtures say so in
 // their README. It is deliberately NOT added to the browser page's samples: the

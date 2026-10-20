@@ -31,7 +31,7 @@ import (
 //
 // Regenerate after an intentional change, and READ THE DIFF:
 //
-//	go test ./cmd/verify/ -run TestGolden -update
+//	go test ./cmd/plainreal-verify/ -run TestGolden -update
 
 var update = flag.Bool("update", false, "rewrite the golden files from current output")
 
@@ -149,11 +149,11 @@ func TestGoldenOutput(t *testing.T) {
 			}
 			wantBytes, err := os.ReadFile(path)
 			if err != nil {
-				t.Fatalf("no golden file: %v\nRun: go test ./cmd/verify/ -run TestGolden -update", err)
+				t.Fatalf("no golden file: %v\nRun: go test ./cmd/plainreal-verify/ -run TestGolden -update", err)
 			}
 			if got != string(wantBytes) {
 				t.Errorf("output changed for %q.\n\nIf the change is intended, run\n"+
-					"  go test ./cmd/verify/ -run TestGolden -update\n"+
+					"  go test ./cmd/plainreal-verify/ -run TestGolden -update\n"+
 					"and READ THE DIFF before committing it.\n\n%s",
 					tc.name, firstDifference(string(wantBytes), got))
 			}
