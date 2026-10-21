@@ -9,9 +9,12 @@ package verifycore
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
@@ -75,6 +78,27 @@ const RecordVersion = "1.0.0"
 // governance_context, and execution_context (§6). Additive envelope changes bump
 // this; the top-level list stays locked.
 const EnvelopeSchemaVersion = "1.0.0"
+
+// envelopeVersionRe is MAJOR.MINOR.PATCH, numeric, no leading zeros, nothing
+// else: "1.0" and "1.0.0-rc1" are not versions an envelope carries.
+var envelopeVersionRe = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
+
+// IsAcceptedEnvelopeVersion reports whether a VERIFIER accepts an envelope's
+// schema_version: any version with the major it implements (§6, draft-6). An
+// additive bump adds keys inside the envelope; the verifier validates the keys
+// it knows and hashes the rest (§4.6.1), so a 1.4.0 envelope from a newer
+// producer verifies here. A different major changes what known keys mean, and
+// is refused.
+//
+// Until v1.2.0 this was exact equality with "1.0.0", which made every additive
+// bump a rejection: the very evolution §6 promises (SPEC_CODE_DIVERGENCES #1).
+//
+// A PRODUCER still emits exactly EnvelopeSchemaVersion; core.ValidateTierA
+// holds it to that.
+func IsAcceptedEnvelopeVersion(v string) bool {
+	m := envelopeVersionRe.FindStringSubmatch(v)
+	return m != nil && m[1] == strings.SplitN(EnvelopeSchemaVersion, ".", 2)[0]
+}
 
 // capture_layer permitted values. The Record.CaptureLayer field is a plain
 // required string — the cross-language schema contract (the Python SDK and any
@@ -374,7 +398,12 @@ func VerifyRecordBytes(raw []byte, publicKeyHex string) (ok bool, recordHash str
 // =============================================================================
 
 var lowerHex64Re = regexp.MustCompile(`^[0-9a-f]{64}$`)
-var uuidRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
+
+// uuidRe is UUIDv4, as the specification says in three places (§3.1 field 1,
+// §3.2, §12). Until v1.2.0 the version nibble was [1-5], which let a UUIDv1,
+// carrying a MAC address and a timestamp, into a signed field nobody can
+// delete. Every producer this repository has ever had stamps version 4.
+var uuidRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 
 // correlationIDRe matches §4.9's opaque-token grammar.
 var correlationIDRe = regexp.MustCompile(`^[A-Za-z0-9:_.-]{1,128}$`)
@@ -489,10 +518,256 @@ func RecordFromJSON(data []byte) (*Record, error) {
 			return nil, fmt.Errorf("record: unknown top-level key %q (the 33-field list is frozen; new capability goes inside a versioned envelope, never as a new top-level field)", k)
 		}
 	}
+	// The other half of "frozen": every field is required. encoding/json fills
+	// a missing field with its zero value, and for three of them (consequential,
+	// instrumentation_coverage, lock_verification_latency_ms) the zero value is
+	// also a valid one, so until v1.2.0 a record missing any of them validated,
+	// and verified, since the signature covers the bytes as written.
+	// signing_attestation is the exception: its absence means "not sealed",
+	// which the verifier reports as that rather than as a malformed record.
+	var missing []string
+	for k := range topLevelKeys {
+		if _, present := probe[k]; !present && k != "signing_attestation" {
+			missing = append(missing, k)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return nil, fmt.Errorf("record: missing top-level key(s) %s (all 33 fields are required; a field that does not apply carries its defined sentinel)",
+			strings.Join(missing, ", "))
+	}
+
+	// null, where the schema does not allow it. encoding/json decodes null
+	// into a non-pointer field as that field's zero value, without error, so
+	// consequential: null read as false and score: null as 0, and the record
+	// validated. §4.4: a field that does not apply carries its defined
+	// sentinel, never "absent", and null is not one. The only nulls the schema
+	// allows are §4.10's "not set by this call", which the struct models as
+	// pointers; a null array is left to I5, which reports it in its own words.
+	var generic interface{}
+	if err := json.Unmarshal(data, &generic); err == nil {
+		var problems []string
+		strictFields(generic, reflect.TypeOf(Record{}), "", &problems)
+		if len(problems) > 0 {
+			return nil, fmt.Errorf("record: %s", strings.Join(problems, "; "))
+		}
+	}
 
 	var p Record
 	if err := json.Unmarshal(data, &p); err != nil {
+		var te *json.UnmarshalTypeError
+		if errors.As(err, &te) {
+			return nil, fmt.Errorf("record: %s", describeTypeError(data, te))
+		}
 		return nil, fmt.Errorf("record: unmarshal: %w", err)
 	}
 	return &p, nil
+}
+
+// describeTypeError restates a JSON type mismatch in the reader's terms.
+//
+// encoding/json reports it as "cannot unmarshal number into Go struct field
+// LLMCallParams.execution_context.llm_calls.params.seed of type string". That
+// reached the reader verbatim: it names a Go type, which means nothing outside
+// this repository, and it omits the array index, so a record with three model
+// calls did not say which one was wrong. Every named check in ValidateFields
+// sits behind this unmarshal, so a type mismatch in any typed field was
+// reported this way and never reached the check written for that field.
+//
+// The error's Field is the dotted path of JSON names without indices. Walking
+// the record along that path, expanding arrays, finds the element or elements
+// whose value has the offending JSON kind, and restores the index. The verdict
+// does not change; only what the reader is told does.
+func describeTypeError(data []byte, te *json.UnmarshalTypeError) string {
+	want := jsonKindOf(te.Type)
+	if te.Field == "" {
+		return fmt.Sprintf("the record must be %s, got %s", want, articled(te.Value))
+	}
+	var doc interface{}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return fmt.Sprintf("%s must be %s, got %s", te.Field, want, articled(te.Value))
+	}
+	var hits []string
+	locateKind(doc, strings.Split(te.Field, "."), "", te.Value, &hits)
+	if len(hits) == 0 {
+		hits = []string{te.Field}
+	}
+	return fmt.Sprintf("%s must be %s, got %s", strings.Join(hits, ", "), want, articled(te.Value))
+}
+
+// strictFields walks a decoded document beside the struct type it decodes
+// into, and reports what encoding/json would quietly accept:
+//
+//   - a null on a field that cannot hold one: not a pointer (a §4.10
+//     nullable) and not a slice (I5's to report);
+//   - a key that differs from a field's name only in letter case.
+//     encoding/json matches keys case-insensitively, with Unicode folding, so
+//     "OVERSIGHT_MODE" filled oversight_mode, and with both spellings present
+//     the LAST one in the document won. Keys are case-sensitive in the schema
+//     and in every other implementation; a validator reading a different value
+//     from the one a reader sees under the field's name is not one to trust.
+//
+// Other keys the struct does not know are envelope keys from a newer producer
+// and are left alone (§6).
+func strictFields(v interface{}, t reflect.Type, prefix string, out *[]string) {
+	obj, ok := v.(map[string]interface{})
+	if !ok || t.Kind() != reflect.Struct {
+		return
+	}
+	names := make(map[string]bool, t.NumField())
+	for i := 0; i < t.NumField(); i++ {
+		if name := strings.Split(t.Field(i).Tag.Get("json"), ",")[0]; name != "" && name != "-" {
+			names[name] = true
+		}
+	}
+	at := func(k string) string {
+		if prefix == "" {
+			return k
+		}
+		return prefix + "." + k
+	}
+	keys := make([]string, 0, len(obj))
+	for k := range obj {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		if names[k] {
+			continue
+		}
+		for name := range names {
+			if strings.EqualFold(k, name) {
+				*out = append(*out, fmt.Sprintf("%s differs from the field %q only in letter case; keys are case-sensitive", at(k), name))
+			}
+		}
+	}
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		name := strings.Split(f.Tag.Get("json"), ",")[0]
+		if name == "" || name == "-" {
+			continue
+		}
+		val, present := obj[name]
+		if !present {
+			continue
+		}
+		path := name
+		if prefix != "" {
+			path = prefix + "." + name
+		}
+		ft := f.Type
+		if val == nil {
+			if ft.Kind() != reflect.Ptr && ft.Kind() != reflect.Slice {
+				*out = append(*out, fmt.Sprintf("%s must be %s, got null", path, jsonKindOf(ft)))
+			}
+			continue
+		}
+		switch ft.Kind() {
+		case reflect.Struct:
+			strictFields(val, ft, path, out)
+		case reflect.Slice:
+			if arr, ok := val.([]interface{}); ok && ft.Elem().Kind() == reflect.Struct {
+				for j, el := range arr {
+					elPath := fmt.Sprintf("%s[%d]", path, j)
+					if el == nil {
+						*out = append(*out, fmt.Sprintf("%s must be an object, got null", elPath))
+						continue
+					}
+					strictFields(el, ft.Elem(), elPath, out)
+				}
+			} else if ok && ft.Elem().Kind() == reflect.String {
+				for j, el := range arr {
+					if el == nil {
+						*out = append(*out, fmt.Sprintf("%s[%d] must be a string, got null", path, j))
+					}
+				}
+			}
+		}
+	}
+}
+
+// locateKind walks segs through v, iterating every element when it meets an
+// array, and records the indexed path of each leaf whose JSON kind is kind.
+func locateKind(v interface{}, segs []string, prefix, kind string, out *[]string) {
+	if len(segs) == 0 {
+		if genericKind(v) == kind {
+			*out = append(*out, prefix)
+		}
+		return
+	}
+	switch n := v.(type) {
+	case map[string]interface{}:
+		child, ok := n[segs[0]]
+		if !ok {
+			return
+		}
+		next := segs[0]
+		if prefix != "" {
+			next = prefix + "." + segs[0]
+		}
+		locateKind(child, segs[1:], next, kind, out)
+	case []interface{}:
+		for i, el := range n {
+			locateKind(el, segs, fmt.Sprintf("%s[%d]", prefix, i), kind, out)
+		}
+	}
+}
+
+// genericKind names the JSON kind of a value decoded into interface{}, in the
+// same vocabulary encoding/json uses for UnmarshalTypeError.Value.
+func genericKind(v interface{}) string {
+	switch v.(type) {
+	case string:
+		return "string"
+	case float64:
+		return "number"
+	case bool:
+		return "bool"
+	case []interface{}:
+		return "array"
+	case map[string]interface{}:
+		return "object"
+	case nil:
+		return "null"
+	}
+	return "unknown"
+}
+
+// jsonKindOf names the JSON kind a Go target type accepts. It describes what
+// the reader should have written, so it speaks JSON, never Go.
+func jsonKindOf(t reflect.Type) string {
+	for t != nil && t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t == nil {
+		return "a value of a different type"
+	}
+	switch t.Kind() {
+	case reflect.String:
+		return "a string"
+	case reflect.Bool:
+		return "true or false"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return "a whole number"
+	case reflect.Float32, reflect.Float64:
+		return "a number"
+	case reflect.Slice, reflect.Array:
+		return "an array"
+	case reflect.Struct, reflect.Map:
+		return "an object"
+	}
+	return "a value of a different type"
+}
+
+func articled(kind string) string {
+	switch kind {
+	case "array", "object":
+		return "an " + kind
+	case "bool":
+		return "true or false"
+	case "number", "string":
+		return "a " + kind
+	}
+	return kind
 }

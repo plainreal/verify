@@ -1,0 +1,1477 @@
+{
+  "version": "1.0.0",
+  "note": "Append-only. Never remove a case. Cross-language invariant conformance corpus for the Level-0 validators (Go verifycore, browser page). Every case is derived from a statement in docs/RECORD_SCHEMA.md, quoted in `why`, NOT from either implementation: a corpus read off one implementation can only prove the other copied it. `expect` is accept or reject; on a reject, `expect_path` is the field a conforming validator must name, so rejecting for an unrelated reason still fails. Apply `mutations` to `base` in order; a path segment that parses as an integer indexes an array. `relationship_enum` is the ten values of §3.2.1: a conforming validator must not reject any of them AS A RELATIONSHIP (I2). Whether a given value is appropriate to a given decision_kind is a separate question this corpus does not settle.",
+  "relationship_enum": [
+    "DERIVED_FROM",
+    "AGGREGATES",
+    "VALIDATES",
+    "SELECTED_FROM",
+    "CONSIDERED_ALTERNATIVE",
+    "APPROVES",
+    "REVISES",
+    "RETRACTS",
+    "TRIGGERED_BY",
+    "EXECUTES"
+  ],
+  "base": {
+    "action_type": "credit_decision",
+    "authorization_token_id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+    "availability_policy": "BLOCK_ON_SERVICE_UNAVAILABLE",
+    "capture_layer": "BUSINESS_LAYER",
+    "causality_chain_hash": "1f7588b3d1f0c50385e8c7319995a19c27ac1acad17ae03e1ea9a77300be8ac4",
+    "consequential": true,
+    "created_at": "2026-04-20T14:30:00.000000000Z",
+    "decision_kind": "MODEL_DECISION",
+    "deployment_mode": "SAAS_MANAGED",
+    "evidence_tier": "TIER-A",
+    "execution_context": {
+      "agent_version": "credit-adjudicator@1.4.2",
+      "decisive_seq": 2,
+      "guardrails": [
+        {
+          "name": "pii-scrubber",
+          "stage": "input",
+          "verdict": "PASS",
+          "version": "2.1"
+        }
+      ],
+      "llm_calls": [
+        {
+          "ended_at": "2026-04-20T14:30:00.700Z",
+          "finish_reason": "NONE",
+          "model_name": "gpt-4-turbo-2024-04-09",
+          "model_provider": "openai",
+          "output_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "params": {
+            "max_tokens": 1024,
+            "response_schema_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "seed": null,
+            "temperature": 0,
+            "top_p": null
+          },
+          "prompt_hash": "9316011e888a72262a3f249a3f274a810cafa47b65604373d35ed8d75e72a086",
+          "seq": 1,
+          "started_at": "2026-04-20T14:30:00.100Z",
+          "status": "TIMEOUT"
+        },
+        {
+          "ended_at": "2026-04-20T14:30:01.900Z",
+          "finish_reason": "stop",
+          "model_name": "gpt-4-turbo-2024-04-09",
+          "model_provider": "openai",
+          "output_hash": "2d9d03661ff48f4aa6302f55b8315ea8e5ec6b08828ebf5dd023da8d08ff8a7c",
+          "params": {
+            "max_tokens": 1024,
+            "response_schema_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "seed": null,
+            "temperature": 0,
+            "top_p": null
+          },
+          "prompt_hash": "9316011e888a72262a3f249a3f274a810cafa47b65604373d35ed8d75e72a086",
+          "seq": 2,
+          "started_at": "2026-04-20T14:30:00.800Z",
+          "status": "OK"
+        }
+      ],
+      "retrievals": [
+        {
+          "embedding_model": "lexical-overlap@1",
+          "index_id": "lending_policy_v1",
+          "index_version": "v1",
+          "params": {
+            "filters_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "min_score": 0.15,
+            "reranker": "none",
+            "top_k": 6
+          },
+          "query_hash": "de38d36da25b9cf8a19be54f9762ec746ef550a6d538dd93b42b4f967e005e8f",
+          "seq": 1,
+          "status": "OK"
+        }
+      ],
+      "schema_version": "1.0.0"
+    },
+    "execution_result": "APPROVED",
+    "full_prompt_snapshot": "You are a credit scoring agent. Evaluate the following application...",
+    "governance_context": {
+      "accountable_party": "org:acme-lending",
+      "correlation_ids": [
+        "case:CRM-88213"
+      ],
+      "data_subject_refs": [],
+      "environment": "PROD",
+      "oversight_mode": "SOLELY_AUTOMATED",
+      "retention_class": "STANDARD_7Y",
+      "schema_version": "1.0.0",
+      "tenant_id": "tenant:acme"
+    },
+    "input_hash": "9c195c999e72720b34b3e120491a8aa09ccfc0a71f5f0fd2c449a8035e37e2a9",
+    "instrumentation_coverage": 1,
+    "lock_verification_latency_ms": 47,
+    "model_name": "gpt-4-turbo-2024-04-09",
+    "model_provider": "openai",
+    "model_version_hash": "0c358c55e6974d6fc6b9cc11d7bd044c67b75269e7012b08e3707f5f0f2c37be",
+    "output_pre_postprocess": "Based on the application data, the credit score is 720; recommendation is APPROVE.",
+    "policy_version_hash": "6b09e1031a4529aa9b8cff1bd64c55927ce64bae65803b7e136fb3f7d83f3abc",
+    "principal_identity": "agent:credit-scoring-v2",
+    "provenance": {
+      "schema_version": "1.0.0",
+      "upstream": [],
+      "workflow_definition_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "workflow_id": "adhoc",
+      "workflow_node_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "workflow_run_id": "c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f"
+    },
+    "rag_evidence_bundle": [
+      {
+        "cached": false,
+        "content": "Credit score threshold is 650",
+        "doc_id": "credit-policy-2024",
+        "doc_version": "v2",
+        "retrieval_seq": 1,
+        "score": 0.873,
+        "source": "policy://credit/v2"
+      }
+    ],
+    "record_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "record_version": "1.0.0",
+    "registry_validation_status": "VALIDATED",
+    "sdk_binary_sha3": "a0f6740c924480cea76eef2e4f0434c9aba7ff868c8076de4921c56e263555b0",
+    "sdk_hash_layer": "SERVICE_ENDPOINT",
+    "signing_attestation": "d5d94d81664f35d5c265ca3a098ae4f1c5397f8a76a21e38795cbb59ab05460981402b4a5cad3128c72ae77a7f5b9bf8293a6bea71857969895e4c0508eb3d0f",
+    "signing_key_id": "dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b",
+    "tool_call_log": [
+      {
+        "ended_at": "2026-04-20T14:30:01.298Z",
+        "input_hash": "1ebc6b2a71723a6de1eadb4f38d112a8bdc89e3d5c42770e1ab9bdfd54544e37",
+        "output_hash": "fca7bb1f7a0352486bad5003ddef7a86b589db2b083a4ac8d8216de4aea24d2a",
+        "seq": 1,
+        "started_at": "2026-04-20T14:30:01.123Z",
+        "status": "OK",
+        "tool": "credit_api",
+        "tool_version": "2.3.0"
+      },
+      {
+        "ended_at": "2026-04-20T14:30:01.702Z",
+        "input_hash": "fca7bb1f7a0352486bad5003ddef7a86b589db2b083a4ac8d8216de4aea24d2a",
+        "output_hash": "c486aa69be809fc2868f2f28b1b8a9d06212a0808c98d1bba1eeef93bf1fd6c8",
+        "seq": 2,
+        "started_at": "2026-04-20T14:30:01.456Z",
+        "status": "OK",
+        "tool": "risk_model",
+        "tool_version": "1.0.4"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "base_unmodified",
+      "invariant": "-",
+      "spec": "§5",
+      "why": "The unmodified fixture must validate. A corpus of rejections alone would pass against a validator that refuses everything.",
+      "expect": "accept",
+      "mutations": []
+    },
+    {
+      "id": "i2_relationship_outside_enum",
+      "invariant": "I2",
+      "spec": "§3.2.1",
+      "why": "relationship is a closed enum of ten values.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].relationship",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "CONSUMED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "e01f7da62fdf55936ecc60cbcf70f701e83189f181942441e458a5a5563eec20"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i2_relationship_lowercase",
+      "invariant": "I2",
+      "spec": "§3.2.1",
+      "why": "The enum values are upper-case constants; a lower-case spelling is not one of the ten.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].relationship",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "derived_from",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "b44b7c507acacfcf08da7337c3f659d694cba4d62d3082069614d960c3fdde67"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i2_relationship_empty",
+      "invariant": "I2",
+      "spec": "§3.2.1",
+      "why": "An absent relationship is not one of the ten either.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].relationship",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "7d75d3e6923e87a4a7e1c933339b421a1cc00cc1c70a3e851ba86194261f072d"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i3_causality_hash_altered",
+      "invariant": "I3",
+      "spec": "§5",
+      "why": "causality_chain_hash == SHA3-256(JCS(provenance)). Changing the hash breaks the binding.",
+      "expect": "reject",
+      "expect_path": "causality_chain_hash",
+      "mutations": [
+        {
+          "path": "causality_chain_hash",
+          "set": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ]
+    },
+    {
+      "id": "i3_provenance_altered_hash_stale",
+      "invariant": "I3",
+      "spec": "§5",
+      "why": "Changing provenance without rebinding leaves the committed hash describing a document that no longer exists. §3.5 makes the build order normative for exactly this reason.",
+      "expect": "reject",
+      "expect_path": "causality_chain_hash",
+      "mutations": [
+        {
+          "path": "provenance.workflow_run_id",
+          "set": "99999999-8888-4777-8666-555555555555"
+        }
+      ]
+    },
+    {
+      "id": "i3_causality_hash_not_hex",
+      "invariant": "I3",
+      "spec": "§4.5",
+      "why": "The hash grammar is 64 lowercase hex.",
+      "expect": "reject",
+      "expect_path": "causality_chain_hash",
+      "mutations": [
+        {
+          "path": "causality_chain_hash",
+          "set": "NOT-A-HASH000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "id": "i3_causality_hash_empty",
+      "invariant": "I3",
+      "spec": "§5",
+      "why": "causality_chain_hash is required and non-empty.",
+      "expect": "reject",
+      "expect_path": "causality_chain_hash",
+      "mutations": [
+        {
+          "path": "causality_chain_hash",
+          "set": ""
+        }
+      ]
+    },
+    {
+      "id": "i5_tool_call_log_null",
+      "invariant": "I5",
+      "spec": "§4.4",
+      "why": "Arrays carry the empty-array sentinel, never null. [] and null are different documents with different hashes.",
+      "expect": "reject",
+      "expect_path": "tool_call_log",
+      "mutations": [
+        {
+          "path": "tool_call_log",
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "i5_rag_bundle_null",
+      "invariant": "I5",
+      "spec": "§4.4",
+      "why": "Same sentinel rule for rag_evidence_bundle.",
+      "expect": "reject",
+      "expect_path": "rag_evidence_bundle",
+      "mutations": [
+        {
+          "path": "rag_evidence_bundle",
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "i5_upstream_null",
+      "invariant": "I5",
+      "spec": "§4.4",
+      "why": "A root's upstream is the empty ARRAY, never null; the sentinel is what keeps a root's causality_chain_hash reproducible.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": null
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "b0de6c4a114e85b9800b0f0af4a64afd98f2c53c8d5b7d9aa1b15a004bc4da3a"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i5_workflow_id_empty_string",
+      "invariant": "I5",
+      "spec": "§4.4",
+      "why": "An ad-hoc run declares workflow_id \"adhoc\". \"\" is emptiness, which §4.4 forbids in place of a defined sentinel.",
+      "expect": "reject",
+      "expect_path": "provenance.workflow_id",
+      "mutations": [
+        {
+          "path": "provenance.workflow_id",
+          "set": ""
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "cbc15f0bc66e6f730ebbb587c28cac7c235f0b8e1e88cddab179106d79a6e3f7"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i5_data_subject_refs_null",
+      "invariant": "I5",
+      "spec": "§4.4",
+      "why": "governance_context arrays follow the same rule.",
+      "expect": "reject",
+      "expect_path": "governance_context.data_subject_refs",
+      "mutations": [
+        {
+          "path": "governance_context.data_subject_refs",
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "i6_self_edge",
+      "invariant": "I6",
+      "spec": "§5",
+      "why": "Acyclicity is by construction, but a producer can fabricate an edge whose record_id is its own. That one degenerate case is checked.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].record_id",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "1b717032d0e8f48f6f8428a6c1a0f49a778670db7a5b03e011d9d31aa64a93bb"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i7a_selected_from_without_alternative",
+      "invariant": "I7",
+      "spec": "§3.2.1",
+      "why": "A node carrying a SELECTED_FROM edge MUST carry at least one CONSIDERED_ALTERNATIVE edge. A selection from a single candidate is a consumption, and its edge is DERIVED_FROM.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "SELECTED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "852fda241698b1b5c5b4c9e79bd4c530bef4773c3203a0d4416b9179090def1f"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i7a_selected_from_with_alternative",
+      "invariant": "I7",
+      "spec": "§3.2.1",
+      "why": "The same selection with one alternative satisfies the floor.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "22222222-3333-4444-8555-666666666666",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "CONSIDERED_ALTERNATIVE",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "SELECTED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "39ef8806497783ca4d9dfc625289fed5e908b77b1977b2e992c1f0db62f19f27"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "sort_upstream_not_in_total_order",
+      "invariant": "I10",
+      "spec": "§4.3",
+      "why": "upstream[] is in ascending (record_hash, consumed_output_selector, relationship) order, and sortedness is an enforced invariant. Arrays are not reordered by JCS, so the order is part of what gets signed.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "SELECTED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+              "record_id": "22222222-3333-4444-8555-666666666666",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "CONSIDERED_ALTERNATIVE",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "e20277453c3ab6c2f10fc8052e90f13d51107a11fc20fd124bc4a92bb1660df1"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i4_query_hash_carries_raw_text",
+      "invariant": "I4",
+      "spec": "§2.5",
+      "why": "Envelope capture fields are typed as a 64-hex hash or an opaque identifier, which is what makes a raw payload unrepresentable. The structural shape is the local part; that the producer hashed rather than pasted is a producer property and is not decidable here.",
+      "expect": "reject",
+      "expect_path": "execution_context.retrievals[0].query_hash",
+      "mutations": [
+        {
+          "path": "execution_context.retrievals.0.query_hash",
+          "set": "what is the credit score threshold"
+        }
+      ]
+    },
+    {
+      "id": "i8a_prod_below_retention_floor",
+      "invariant": "I8",
+      "spec": "§4.8",
+      "why": "environment == PROD requires retention_class >= SHORT_1Y.",
+      "expect": "reject",
+      "expect_path": "governance_context.retention_class",
+      "mutations": [
+        {
+          "path": "governance_context.retention_class",
+          "set": "DEV_EPHEMERAL"
+        }
+      ]
+    },
+    {
+      "id": "i8a_prod_at_floor_accepted",
+      "invariant": "I8",
+      "spec": "§4.8",
+      "why": "SHORT_1Y is the floor itself, so PROD accepts it.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "governance_context.retention_class",
+          "set": "SHORT_1Y"
+        }
+      ]
+    },
+    {
+      "id": "i8a_dev_below_floor_accepted",
+      "invariant": "I8",
+      "spec": "§4.8",
+      "why": "The floor applies to PROD. A non-PROD environment (the enum is PROD, STAGING, TEST) may declare DEV_EPHEMERAL.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "governance_context.environment",
+          "set": "TEST"
+        },
+        {
+          "path": "governance_context.retention_class",
+          "set": "DEV_EPHEMERAL"
+        }
+      ]
+    },
+    {
+      "id": "i9_decisive_seq_missing",
+      "invariant": "I9",
+      "spec": "§3.4",
+      "why": "The designated attempt MUST exist.",
+      "expect": "reject",
+      "expect_path": "execution_context.decisive_seq",
+      "mutations": [
+        {
+          "path": "execution_context.decisive_seq",
+          "set": 99
+        }
+      ]
+    },
+    {
+      "id": "i9_decisive_seq_names_failed_attempt",
+      "invariant": "I9",
+      "spec": "§3.4.1",
+      "why": "The designated attempt MUST have status OK. Naming a TIMEOUT as the decisive call is a contradiction the artifact states about itself.",
+      "expect": "reject",
+      "expect_path": "execution_context.decisive_seq",
+      "mutations": [
+        {
+          "path": "execution_context.decisive_seq",
+          "set": 1
+        }
+      ]
+    },
+    {
+      "id": "i10_duplicate_edge",
+      "invariant": "I10",
+      "spec": "§5",
+      "why": "No two upstream edges share (record_hash, selector, relationship). That triple is also §4.3's sort key, so uniqueness is what makes the order total rather than merely defined.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            },
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "3363b512967bd3204f6f8d8569808c06bf5dec40d9208283368ba0ac65e38e2c"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i12_human_principal_raw_identity",
+      "invariant": "I12",
+      "spec": "§4.7",
+      "why": "A HUMAN_DECISION principal is human: plus a 64-lowercase-hex salted ref, not merely the prefix. A prefix-only check accepts human:jane@acme.com, which is the raw identity the pseudonym exists to keep out of the artifact.",
+      "expect": "reject",
+      "expect_path": "principal_identity",
+      "mutations": [
+        {
+          "path": "decision_kind",
+          "set": "HUMAN_DECISION"
+        },
+        {
+          "path": "principal_identity",
+          "set": "human:jane@acme.com"
+        }
+      ]
+    },
+    {
+      "id": "i12_human_principal_short_hex",
+      "invariant": "I12",
+      "spec": "§4.7",
+      "why": "The ref is exactly 64 hex characters; a shorter string is not a HMAC-SHA3-256 output.",
+      "expect": "reject",
+      "expect_path": "principal_identity",
+      "mutations": [
+        {
+          "path": "decision_kind",
+          "set": "HUMAN_DECISION"
+        },
+        {
+          "path": "principal_identity",
+          "set": "human:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "id": "i13_failed_attempt_without_zero_output_hash",
+      "invariant": "I13",
+      "spec": "§3.4.1",
+      "why": "A non-OK attempt carries output_hash = 64-zero.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls[0].output_hash",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.0.output_hash",
+          "set": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      ]
+    },
+    {
+      "id": "i13_failed_attempt_without_none_finish_reason",
+      "invariant": "I13",
+      "spec": "§3.4.1",
+      "why": "A non-OK attempt carries finish_reason = NONE.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls[0].finish_reason",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.0.finish_reason",
+          "set": "stop"
+        }
+      ]
+    },
+    {
+      "id": "i13_ok_attempt_carrying_sentinels",
+      "invariant": "I13",
+      "spec": "§3.4.1",
+      "why": "An OK attempt does NOT carry those sentinels. An OK call with no output to hash is a contradiction the artifact states about itself.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls[1].output_hash",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.1.output_hash",
+          "set": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "path": "execution_context.llm_calls.1.finish_reason",
+          "set": "NONE"
+        }
+      ]
+    },
+    {
+      "id": "i13_status_not_in_enum",
+      "invariant": "I13",
+      "spec": "§3.4.1",
+      "why": "status is a valid enum value.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls[0].status",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.0.status",
+          "set": "WEIRD"
+        }
+      ]
+    },
+    {
+      "id": "i13_seq_not_contiguous",
+      "invariant": "I13",
+      "spec": "§3.4.1",
+      "why": "seq is 1-based, strictly increasing and contiguous.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.0.seq",
+          "set": 1
+        },
+        {
+          "path": "execution_context.llm_calls.1.seq",
+          "set": 5
+        },
+        {
+          "path": "execution_context.decisive_seq",
+          "set": 5
+        }
+      ]
+    },
+    {
+      "id": "i13_seq_not_one_based",
+      "invariant": "I13",
+      "spec": "§3.4.1",
+      "why": "The first attempt is seq 1.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.0.seq",
+          "set": 0
+        },
+        {
+          "path": "execution_context.llm_calls.1.seq",
+          "set": 1
+        },
+        {
+          "path": "execution_context.decisive_seq",
+          "set": 1
+        }
+      ]
+    },
+    {
+      "id": "i14a_pre_authorized_without_triggered_by",
+      "invariant": "I14",
+      "spec": "§3.3.1",
+      "why": "PRE_AUTHORIZED requires at least one TRIGGERED_BY upstream edge: its authorization is in the past, so a backward edge can and must reference it. A PRE_AUTHORIZED node with no such edge references no authorization at all.",
+      "expect": "reject",
+      "expect_path": "governance_context.oversight_mode",
+      "mutations": [
+        {
+          "path": "governance_context.oversight_mode",
+          "set": "PRE_AUTHORIZED"
+        }
+      ]
+    },
+    {
+      "id": "i14a_pre_authorized_with_triggered_by",
+      "invariant": "I14",
+      "spec": "§3.3.1",
+      "why": "The same declaration with a TRIGGERED_BY edge is satisfied locally.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "governance_context.oversight_mode",
+          "set": "PRE_AUTHORIZED"
+        },
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "TRIGGERED_BY",
+              "consumed_output_selector": "",
+              "consumed_output_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "d31c5676976c2c90bebd5cef2189c8662c03ced65c851d29575797c01eb9e708"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i14a_other_modes_need_no_edge",
+      "invariant": "I14",
+      "spec": "§3.3.1",
+      "why": "HUMAN_ON_THE_LOOP expects nothing locally; absence is not a violation. Only PRE_AUTHORIZED is locally checkable.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "governance_context.oversight_mode",
+          "set": "HUMAN_ON_THE_LOOP"
+        }
+      ]
+    },
+    {
+      "id": "edge_control_with_selector",
+      "invariant": "I2",
+      "spec": "§3.2.1",
+      "why": "Control edges carry consumed_output_selector \"\" and consumed_output_hash 64-zero. TRIGGERED_BY is a control edge; naming a selector claims it consumed a value it cannot have consumed.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].consumed_output_selector",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "TRIGGERED_BY",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "ec905ca79f51149cb7c32a1348323d038fc8bfa51d1e4b869673420de7dbef04"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "edge_control_with_value_hash",
+      "invariant": "I2",
+      "spec": "§3.2.1",
+      "why": "A control edge consumes no value, so its consumed_output_hash is the 64-zero sentinel, not the hash of something.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].consumed_output_hash",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "TRIGGERED_BY",
+              "consumed_output_selector": "",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "a09cc1f44773f1c165e2691ad658ad939e22f277a443b99d49098d7e0453ca9d"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "edge_data_with_empty_selector",
+      "invariant": "I2",
+      "spec": "§4.1",
+      "why": "\"\" is reserved for control-only edges and means no value consumed. A DERIVED_FROM edge consumed the parent's output, so it must name it.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].consumed_output_selector",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "096b18e06ff7390308799be409365b9a78753ddb71d3a94089c0350d46ddf2fc"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "edge_data_with_zero_hash",
+      "invariant": "I2",
+      "spec": "§3.2.1",
+      "why": "A data edge consumed a value; the 64-zero hash is the absent-value sentinel and contradicts the claim that anything was consumed.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].consumed_output_hash",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "3b0bac243c216e799d5ee948d22498476c8162ed16be326afb82b3e83b250416"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "selector_deeper_path",
+      "invariant": "-",
+      "spec": "§4.1",
+      "why": "A selector is a single segment addressing a top-level field of the parent. Deeper paths are reserved and rejected in v1.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].consumed_output_selector",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "/execution_result/score",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "e814cff658327be58aeb11a106adef21f8756b8396bdf8ed7734754de0711ff0"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "selector_uri_fragment_form",
+      "invariant": "-",
+      "spec": "§4.1",
+      "why": "Selectors are non-URI JSON Pointers. The #-prefixed URI fragment form is a different representation of the same pointer, and is not accepted.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].consumed_output_selector",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "#/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "3920e74ac36b42933258f8deeaae0f8d0d1a7d564658c66cdfe596d0c54fc775"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "selector_missing_leading_slash",
+      "invariant": "-",
+      "spec": "§4.1",
+      "why": "An RFC 6901 pointer to a member begins with /.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].consumed_output_selector",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "af301b2a6f5829755e0e348667599bdefde94ea176ad75d5088e8048d11c6e2b"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "selector_escaped_segment_accepted",
+      "invariant": "-",
+      "spec": "§4.1",
+      "why": "Escaping is ~0 for ~ and ~1 for /. No top-level field contains either, so a correctly escaped pointer to a real field is just that field: /execution_result needs no escape and is accepted.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "11111111-2222-4333-8444-555555555555",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "9d680235ddc211e7be919b1f40d1cf02fea0cd19163a158b9c990d4ced76eb1f"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "envelope_unknown_key_tolerated",
+      "invariant": "-",
+      "spec": "§6",
+      "why": "Top-level parsing rejects unknown keys; envelope parsing tolerates them. A verifier validates the keys it knows and ignores the rest, which is what lets a record from a newer producer still verify. §4.11's frozen key set binds the PRODUCER. A verifier that rejected this would break §6's additive-evolution promise.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.1.params.frequency_penalty",
+          "set": 0.5
+        }
+      ]
+    },
+    {
+      "id": "params_seed_numeric",
+      "invariant": "-",
+      "spec": "§4.10",
+      "why": "seed is a decimal string or null. A 64-bit seed as a JSON number exceeds JCS's safe-integer window and would be rejected or rounded.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls[1].params.seed",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.1.params.seed",
+          "set": 42
+        }
+      ]
+    },
+    {
+      "id": "type_decisive_seq_string",
+      "invariant": "-",
+      "spec": "§3.4 / §3.4.1",
+      "why": "decisive_seq names an attempt by its seq, and seq is 1-based and strictly increasing: a whole number. \"2\" is a string that looks like one.",
+      "expect": "reject",
+      "expect_path": "execution_context.decisive_seq",
+      "mutations": [
+        {
+          "path": "execution_context.decisive_seq",
+          "set": "2"
+        }
+      ]
+    },
+    {
+      "id": "type_attempt_seq_string",
+      "invariant": "-",
+      "spec": "§3.4.1",
+      "why": "An attempt's seq is a whole number. The verdict must name WHICH attempt, since a record can carry several.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls[0].seq",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.0.seq",
+          "set": "1"
+        }
+      ]
+    },
+    {
+      "id": "type_temperature_string",
+      "invariant": "-",
+      "spec": "§4.10",
+      "why": "temperature and top_p are JSON numbers, canonicalized by JCS's ECMAScript number rule.",
+      "expect": "reject",
+      "expect_path": "execution_context.llm_calls[1].params.temperature",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.1.params.temperature",
+          "set": "hot"
+        }
+      ]
+    },
+    {
+      "id": "type_envelope_not_object",
+      "invariant": "-",
+      "spec": "§3.2",
+      "why": "provenance is a versioned envelope: an object with its own schema_version.",
+      "expect": "reject",
+      "expect_path": "provenance",
+      "mutations": [
+        {
+          "path": "provenance",
+          "set": []
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "ca4510738395af1429224dd785675309c344b2b549632e20275c69b15ed1d210"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "i12_non_model_kind_names_a_provider",
+      "invariant": "I12",
+      "spec": "§3.1 field 12",
+      "why": "model_provider is the decisive call's provider for MODEL, and \"NONE\" for every non-model kind. A TOOL_EXECUTION record naming a provider claims a model call its kind says did not decide it.",
+      "expect": "reject",
+      "expect_path": "model_provider",
+      "mutations": [
+        {
+          "path": "decision_kind",
+          "set": "TOOL_EXECUTION"
+        }
+      ]
+    },
+    {
+      "id": "value_created_at_not_utc",
+      "invariant": "-",
+      "spec": "§4 / created_at",
+      "why": "created_at must end in literal Z. An offset parses as RFC 3339 and is still rejected: forensic evidence cannot carry timezone ambiguity.",
+      "expect": "reject",
+      "expect_path": "created_at",
+      "mutations": [
+        {
+          "path": "created_at",
+          "set": "2026-04-20T14:30:00.000000000+05:30"
+        }
+      ]
+    },
+    {
+      "id": "value_evidence_tier_unknown",
+      "invariant": "-",
+      "spec": "§4",
+      "why": "evidence_tier is a closed enum.",
+      "expect": "reject",
+      "expect_path": "evidence_tier",
+      "mutations": [
+        {
+          "path": "evidence_tier",
+          "set": "TIER-Z"
+        }
+      ]
+    },
+    {
+      "id": "value_record_id_not_uuid",
+      "invariant": "-",
+      "spec": "§4",
+      "why": "record_id is a UUID.",
+      "expect": "reject",
+      "expect_path": "record_id",
+      "mutations": [
+        {
+          "path": "record_id",
+          "set": "not-a-uuid"
+        }
+      ]
+    },
+    {
+      "id": "value_retention_class_unknown",
+      "invariant": "-",
+      "spec": "§4.8",
+      "why": "retention_class is the ordered five-value enum; an unknown class has no position in the ordering and cannot derive a lock.",
+      "expect": "reject",
+      "expect_path": "governance_context.retention_class",
+      "mutations": [
+        {
+          "path": "governance_context.retention_class",
+          "set": "FOREVER_AND_EVER"
+        }
+      ]
+    },
+    {
+      "id": "value_oversight_mode_unknown",
+      "invariant": "-",
+      "spec": "§3.3.1",
+      "why": "oversight_mode is a closed four-value enum.",
+      "expect": "reject",
+      "expect_path": "governance_context.oversight_mode",
+      "mutations": [
+        {
+          "path": "governance_context.oversight_mode",
+          "set": "VIBES"
+        }
+      ]
+    },
+    {
+      "id": "value_signing_key_id_wrong_grammar",
+      "invariant": "-",
+      "spec": "§4.5",
+      "why": "signing_key_id is 64 lowercase hex with no prefix.",
+      "expect": "reject",
+      "expect_path": "signing_key_id",
+      "mutations": [
+        {
+          "path": "signing_key_id",
+          "set": "sha3:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "id": "value_created_at_not_a_date",
+      "invariant": "-",
+      "spec": "§3.1 field 3",
+      "why": "created_at is RFC 3339, which constrains the day of the month by month and year (RFC 3339 §5.7). 2026 is not a leap year, so 29 February 2026 has the right shape and is not a date.",
+      "expect": "reject",
+      "expect_path": "created_at",
+      "mutations": [
+        {
+          "path": "created_at",
+          "set": "2026-02-29T14:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "value_created_at_leap_day_accepted",
+      "invariant": "-",
+      "spec": "§3.1 field 3",
+      "why": "2024 is a leap year, so 29 February 2024 is a date, and a validator that checks the calendar must not reject it.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "created_at",
+          "set": "2024-02-29T14:30:00Z"
+        }
+      ]
+    },
+    {
+      "id": "i12_model_kind_absent_model_hash",
+      "invariant": "I12",
+      "spec": "§3.1 field 11 / §4.4",
+      "why": "For MODEL, model_version_hash is SHA3-256(JCS({provider, model_name, served_version})). The 64-zero hash is §4.4's sentinel for an ABSENT hash, and is for non-model kinds. A model decision with no model is a contradiction the record states about itself.",
+      "expect": "reject",
+      "expect_path": "model_version_hash",
+      "mutations": [
+        {
+          "path": "model_version_hash",
+          "set": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "id": "i5_declared_workflow_with_absent_definition",
+      "invariant": "I5",
+      "spec": "§3.2 / §4.4",
+      "why": "workflow_definition_hash is SHA3(JCS(declared DAG)), and 64-zero only if ad-hoc. A run that declares a workflow_id has a DAG to hash; the absent-value sentinel says it does not.",
+      "expect": "reject",
+      "expect_path": "provenance.workflow_definition_hash",
+      "mutations": [
+        {
+          "path": "provenance.workflow_id",
+          "set": "loan-review-v3"
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "9c0813e54420a3608f8d7c26afd3e4ec4766de690126c0ee471eb18c2537a1bc"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "edge_record_id_not_uuid",
+      "invariant": "-",
+      "spec": "§3.2.1 / §3.1 field 1",
+      "why": "An edge's record_id names the parent record, and a record_id is a UUIDv4.",
+      "expect": "reject",
+      "expect_path": "provenance.upstream[0].record_id",
+      "mutations": [
+        {
+          "path": "provenance.upstream",
+          "set": [
+            {
+              "record_id": "parent-record",
+              "record_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "relationship": "DERIVED_FROM",
+              "consumed_output_selector": "/execution_result",
+              "consumed_output_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "parent_signing_key_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+            }
+          ]
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "6bd55504adf4e36090cb11673e03c05ebf1398c596c145e5c8293a3c32d3a314"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "value_guardrail_stage_unknown",
+      "invariant": "-",
+      "spec": "§3.4",
+      "why": "A guardrail's stage is input or output.",
+      "expect": "reject",
+      "expect_path": "execution_context.guardrails[0].stage",
+      "mutations": [
+        {
+          "path": "execution_context.guardrails.0.stage",
+          "set": "pre"
+        }
+      ]
+    },
+    {
+      "id": "value_correlation_id_grammar",
+      "invariant": "-",
+      "spec": "§4.9",
+      "why": "correlation_ids are opaque tokens matching ^[A-Za-z0-9:_.-]{1,128}$. A space is outside the grammar, and an email address is the kind of value the no-PII rule exists to keep out.",
+      "expect": "reject",
+      "expect_path": "governance_context.correlation_ids[0]",
+      "mutations": [
+        {
+          "path": "governance_context.correlation_ids.0",
+          "set": "jane doe@acme.com"
+        }
+      ]
+    },
+    {
+      "id": "value_workflow_run_id_uuid_v1",
+      "invariant": "-",
+      "spec": "§3.2",
+      "why": "workflow_run_id is a UUIDv4, SDK-minted at run start. A version-1 UUID has the same shape and carries a MAC address and a timestamp, in a signed field nobody can delete.",
+      "expect": "reject",
+      "expect_path": "provenance.workflow_run_id",
+      "mutations": [
+        {
+          "path": "provenance.workflow_run_id",
+          "set": "c3d4e5f6-a7b8-1c9d-8e1f-2a3b4c5d6e7f"
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "a99d385ad5b8a3dff153c73ec178c612cf328c9082bc325d1fa357c496677ccd"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "value_consequential_null",
+      "invariant": "-",
+      "spec": "§4.4",
+      "why": "Sentinels are never empty-string and never absent, and null is not the sentinel for consequential, a true-or-false field. The only nulls the schema allows are §4.10's params keys, meaning not set by the call.",
+      "expect": "reject",
+      "expect_path": "consequential",
+      "mutations": [
+        {
+          "path": "consequential",
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "params_null_accepted",
+      "invariant": "-",
+      "spec": "§4.10",
+      "why": "Keys the provider did not set are JSON null: null here means not set by the call, which is a fact, not an optional field. A validator that refuses null everywhere must still accept it here.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "execution_context.llm_calls.1.params.temperature",
+          "set": null
+        }
+      ]
+    },
+    {
+      "id": "envelope_minor_bump_with_new_key_accepted",
+      "invariant": "-",
+      "spec": "§6",
+      "why": "A verifier accepts any envelope version with the major it implements (1.x.y for this spec). It validates the keys it knows, and hashes and ignores the rest. Exact equality would make every additive bump a rejection, which is what §6 exists to prevent.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "provenance.schema_version",
+          "set": "1.1.0"
+        },
+        {
+          "path": "provenance.added_in_1_1",
+          "set": "a key this verifier does not know"
+        },
+        {
+          "path": "causality_chain_hash",
+          "set": "02fa1b29dc1ef9b3b8f3e080dd36920f3eeaccb11098ce0be504921e304f98f1"
+        }
+      ],
+      "rebinds_causality": true
+    },
+    {
+      "id": "envelope_minor_bump_execution_context_accepted",
+      "invariant": "-",
+      "spec": "§6",
+      "why": "The rule is the same for every envelope.",
+      "expect": "accept",
+      "mutations": [
+        {
+          "path": "execution_context.schema_version",
+          "set": "1.4.2"
+        }
+      ]
+    },
+    {
+      "id": "envelope_major_bump_rejected",
+      "invariant": "-",
+      "spec": "§6",
+      "why": "A different major is rejected: it may change what the known keys mean.",
+      "expect": "reject",
+      "expect_path": "governance_context.schema_version",
+      "mutations": [
+        {
+          "path": "governance_context.schema_version",
+          "set": "2.0.0"
+        }
+      ]
+    },
+    {
+      "id": "envelope_version_not_major_minor_patch",
+      "invariant": "-",
+      "spec": "§6",
+      "why": "An envelope schema_version is MAJOR.MINOR.PATCH.",
+      "expect": "reject",
+      "expect_path": "execution_context.schema_version",
+      "mutations": [
+        {
+          "path": "execution_context.schema_version",
+          "set": "1.0"
+        }
+      ]
+    }
+  ]
+}

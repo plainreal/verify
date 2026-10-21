@@ -78,6 +78,6 @@ repeats it in the README. Trust the tag: a hash published only in the repository
 it describes is circular, because whoever can edit one can edit the other.
 
 ```bash
-git tag -v v1.1.1                 # signature, and the hash in the message
+git tag -v v1.2.0                 # signature, and the hash in the message
 shasum -a 256 public/index.html         # compare
 ```

@@ -1,4 +1,4 @@
-# cmd/verify/testdata
+# cmd/plainreal-verify/testdata
 
 `unsealed_record.json` is a structurally valid TIER-A record with an empty
 `signing_attestation`. The CLI's tests seal it with an ephemeral Ed25519 key
@@ -44,5 +44,5 @@ there would let a reader infer a time proof that does not exist.
 Regenerate with:
 
 ```
-PLAINREAL_WRITE_TSR_FIXTURES=1 go test ./cmd/verify/ -run TestGenerateTSRFixtures
+PLAINREAL_WRITE_TSR_FIXTURES=1 go test ./cmd/plainreal-verify/ -run TestGenerateTSRFixtures
 ```

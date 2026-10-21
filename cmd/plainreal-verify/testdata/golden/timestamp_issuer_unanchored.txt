@@ -17,10 +17,12 @@ Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00
 
 WHAT WAS CHECKED
   [x] JSON Parse
-  [x] Record Version
-  [x] TIER-A Validation + Local Invariants
+  [x] Signing Key
   [x] Record Hash Computed
   [x] Signature
+  [x] Record Version
+  [x] Record Structure
+  [x] TIER-A Validation + Local Invariants
   [x] RFC 3161 Timestamp
 
 VERIFIED
@@ -61,7 +63,7 @@ this file does not contain, and none of it was fetched or consulted:
 
   Also runs in a browser: https://verify.plainreal.com
   Source of both:         https://github.com/plainreal/verify
-  A release gate requires the two to agree wherever both check.
-  This tool checks more of a record than the page does.
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
   Nothing was contacted to produce this result.
 --- stderr ---

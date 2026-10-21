@@ -17,8 +17,7 @@ Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00
 
 WHAT WAS CHECKED
   [x] JSON Parse
-  [x] Record Version
-  [x] TIER-A Validation + Local Invariants
+  [x] Signing Key
   [x] Record Hash Computed
   [!] Signature: signature does not match record content
 
@@ -26,7 +25,7 @@ FAILED
 Reason: signature verification failed; record may have been tampered with
 
 This artifact could not be verified with the key you supplied.
-Any of these would produce that result:
+Either of these would produce that result:
   1. The record was modified after it was signed.
   2. The signature is not a signature over these bytes.
 
@@ -34,7 +33,7 @@ This tool cannot tell you which, and does not guess.
 
   Also runs in a browser: https://verify.plainreal.com
   Source of both:         https://github.com/plainreal/verify
-  A release gate requires the two to agree wherever both check.
-  This tool checks more of a record than the page does.
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
   Nothing was contacted to produce this result.
 --- stderr ---

@@ -65,6 +65,58 @@ func TestVerifycoreCannotSign(t *testing.T) {
 	}
 }
 
+// TestVerifycoreCannotLoadASecondArtifact is the Level-0 / Level-1 boundary,
+// stated as a structural fact rather than as a pattern to grep for.
+//
+// Level 1 is following an edge: fetch the parent, confirm its record_hash,
+// verify its signature. Every step needs a SECOND artifact. verifycore is
+// handed bytes and returns a verdict about those bytes; with no way to open a
+// file or a connection, it cannot load a parent, so it cannot traverse a
+// chain whatever its code happens to read inside the one record it was given.
+//
+// That is what keeps this package a Level-0 verifier. The page's equivalent is
+// its Content-Security-Policy, connect-src 'none'. Reading an edge's fields
+// inside the one record is Level 0, and several single-record invariants
+// cannot be checked without doing so; loading the record an edge points at is
+// Level 1, and this package has no way to.
+//
+// The CLI may open the files a user names; it is the caller. verifycore may
+// not, and test files are excluded because fixtures are read from disk.
+func TestVerifycoreCannotLoadASecondArtifact(t *testing.T) {
+	banned := map[string]string{
+		"os":            "opening a file is how a second artifact, a parent, gets loaded",
+		"io/fs":         "a filesystem is how a second artifact gets loaded",
+		"io/ioutil":     "reading a file is how a second artifact gets loaded",
+		"path/filepath": "a verifier handed bytes has no path to resolve",
+		"net":           "fetching a parent over the network is Level 1",
+		"net/http":      "fetching a parent over the network is Level 1",
+		"net/url":       "a URL is somewhere a parent could be fetched from",
+		"plugin":        "loading code at run time could load anything",
+	}
+	fset := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fset, ".", func(fi os.FileInfo) bool {
+		return !strings.HasSuffix(fi.Name(), "_test.go")
+	}, parser.ImportsOnly)
+	if err != nil {
+		t.Fatalf("parse verifycore: %v", err)
+	}
+	seen := 0
+	for _, pkg := range pkgs {
+		for name, file := range pkg.Files {
+			seen++
+			for _, imp := range file.Imports {
+				path := strings.Trim(imp.Path.Value, `"`)
+				if why, bad := banned[path]; bad {
+					t.Errorf("%s imports %q: %s", name, path, why)
+				}
+			}
+		}
+	}
+	if seen == 0 {
+		t.Fatal("parsed no non-test files; the guard would pass vacuously")
+	}
+}
+
 // TestVerifycoreDeclaresNoSigner is the second half: even with no banned import,
 // a hand-rolled signer or a private key type would defeat the purpose. Names are
 // a weaker signal than imports, which is why this is the backstop and the import

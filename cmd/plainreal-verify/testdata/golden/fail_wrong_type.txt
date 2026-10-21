@@ -1,0 +1,37 @@
+argv --record testdata/bad/wrong_type.json --key testdata/bad/signed_defects.pub.pem
+exit 1
+--- stdout ---
+PlainReal Record Verification
+plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
+─────────────────────────────────────────────────────
+
+THE RECORD
+Record ID:       a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+Evidence Tier:   TIER-A
+Principal:       agent:credit-scoring-v2
+Action Type:     credit_decision
+Created:         2026-04-20T14:30:00.000000000Z
+Model:           openai / gpt-4-turbo-2024-04-09
+Record Hash:     972803d49bf7df8696b18e122d7966e27537fb600fb253df1c783b711a5f741c
+Signing Key ID:  77e66b897912fbaee29bee34cf1560c8045896bb3abf7588e63bb16c2ce84fef
+
+WHAT WAS CHECKED
+  [x] JSON Parse
+  [x] Signing Key
+  [x] Record Hash Computed
+  [x] Signature
+  [x] Record Version
+  [!] Record Structure: execution_context.llm_calls[1].params.seed must be a string, got a number
+
+NOT A CONFORMANT RECORD
+Reason: execution_context.llm_calls[1].params.seed must be a string, got a number; the signature is valid, so this is not a claim that anything was altered
+
+This document is not shaped like a record this tool can check.
+That is a statement about its structure, not an accusation.
+
+  Also runs in a browser: https://verify.plainreal.com
+  Source of both:         https://github.com/plainreal/verify
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
+  Nothing was contacted to produce this result.
+--- stderr ---

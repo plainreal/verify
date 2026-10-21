@@ -2,11 +2,19 @@ package main
 
 import (
 	"bytes"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
+	"encoding/hex"
+	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/plainreal/verify/verifycore"
 )
 
 // Golden-output tests: assert the EXACT bytes a reader receives.
@@ -69,13 +77,14 @@ var goldenCases = []struct {
 	// leaking into a Reason line, or a shopping list being called FAILED,
 	// because neither happens when everything works.
 	{"fail_tampered", badCase("tampered.json")},
-	{"fail_missing_field", badCase("missing_field.json")},
-	{"fail_unknown_version", badCase("unknown_version.json")},
-	{"fail_extra_field", badCase("extra_field.json")},
+	{"fail_missing_field", signedDefectCase("missing_field.json")},
+	{"fail_unknown_version", signedDefectCase("unknown_version.json")},
+	{"fail_extra_field", signedDefectCase("extra_field.json")},
 	{"fail_unsafe_integer", badCase("unsafe_integer.json")},
 	{"fail_duplicate_key", badCase("duplicate_key.json")},
 	{"fail_malleable_signature", badCase("malleable_signature.json")},
 	{"fail_not_json", badCase("not_json.txt")},
+	{"fail_wrong_type", signedDefectCase("wrong_type.json")},
 	{"fail_wrong_key", []string{
 		"--record", "testdata/timestamped_record.json",
 		"--key-hex", "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
@@ -94,6 +103,81 @@ func badCase(name string) []string {
 	return []string{
 		"--record", filepath.Join("testdata", "bad", name),
 		"--key", "testdata/timestamped_record.pub.pem",
+	}
+}
+
+// signedDefectCase is for a record SIGNED with its defect already in it. Since
+// v1.2.0 the signature is checked before conformance, so the same defect made
+// by editing a signed record is reported as altered (fail_tampered shows that).
+// These four show what a producer that emitted the defect gets: a valid
+// signature, and a refusal for the content.
+func signedDefectCase(name string) []string {
+	return []string{
+		"--record", filepath.Join("testdata", "bad", name),
+		"--key", "testdata/bad/signed_defects.pub.pem",
+	}
+}
+
+// TestGenerateSignedDefectFixtures rewrites the four signed-defect records
+// from timestamped_record.json under a fresh key, and that key's public half.
+// The key is not kept: the files are committed, and regenerating them is
+// what a stranger does to check that they say what they claim.
+//
+//	PLAINREAL_WRITE_BAD_FIXTURES=1 go test ./cmd/plainreal-verify/ -run TestGenerateSignedDefectFixtures
+func TestGenerateSignedDefectFixtures(t *testing.T) {
+	if os.Getenv("PLAINREAL_WRITE_BAD_FIXTURES") != "1" {
+		t.Skip("set PLAINREAL_WRITE_BAD_FIXTURES=1 to rewrite testdata/bad/*")
+	}
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base, err := os.ReadFile(filepath.Join("testdata", "timestamped_record.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defects := map[string]func(d map[string]interface{}){
+		"missing_field.json":   func(d map[string]interface{}) { delete(d, "policy_version_hash") },
+		"unknown_version.json": func(d map[string]interface{}) { d["record_version"] = "9.9.9" },
+		"extra_field.json":     func(d map[string]interface{}) { d["invented_field"] = "nope" },
+		"wrong_type.json": func(d map[string]interface{}) {
+			calls := d["execution_context"].(map[string]interface{})["llm_calls"].([]interface{})
+			calls[1].(map[string]interface{})["params"].(map[string]interface{})["seed"] = 42
+		},
+	}
+	for name, mutate := range defects {
+		var d map[string]interface{}
+		if err := json.Unmarshal(base, &d); err != nil {
+			t.Fatal(err)
+		}
+		mutate(d)
+		d["signing_key_id"] = verifycore.HashSHA3256(pub)
+		delete(d, "signing_attestation")
+		unsigned, err := json.Marshal(d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		hash, err := verifycore.RecordHashFromBytes(unsigned)
+		if err != nil {
+			t.Fatal(err)
+		}
+		hb, _ := hex.DecodeString(hash)
+		d["signing_attestation"] = hex.EncodeToString(ed25519.Sign(priv, hb))
+		out, err := json.MarshalIndent(d, "", "  ")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join("testdata", "bad", name), append(out, '\n'), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	der, err := x509.MarshalPKIXPublicKey(pub)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: der})
+	if err := os.WriteFile(filepath.Join("testdata", "bad", "signed_defects.pub.pem"), pemBytes, 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 

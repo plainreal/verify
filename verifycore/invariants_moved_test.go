@@ -361,6 +361,36 @@ func TestSortOrder_UnsortedUpstreamRejected(t *testing.T) {
 	mustBeClean(t, p2)
 }
 
+// TestSortOrder_ComparesComponentsNotAJoinedKey pins §4.3's order as a tuple
+// order. The comparator once joined the three components with 0x1F and compared
+// the result, which disagrees with the tuple order when a selector holds a byte
+// below 0x1F: "/a" sorts before "/a\x01" as a tuple, after it as a joined key,
+// so a sorted record was refused. The browser page compares the tuple, and the
+// two verifiers disagreed on this record until the comparator was fixed.
+func TestSortOrder_ComparesComponentsNotAJoinedKey(t *testing.T) {
+	short := dataEdge(parentA, "aa", DerivedFrom, "/a", `"APPROVED"`)
+	long := dataEdge(parentA, "aa", DerivedFrom, "/a\x01", `"APPROVED"`)
+
+	p := newTestRecord()
+	p.Provenance.Upstream = []UpstreamEdge{short, long}
+	bindCausalityForTest(p)
+	mustBeClean(t, p)
+
+	p2 := newTestRecord()
+	p2.Provenance.Upstream = []UpstreamEdge{long, short}
+	bindCausalityForTest(p2)
+	mustFire(t, p2, "provenance.upstream")
+
+	// §4.1: byte-compared. U+E000 is EE 80 80 in UTF-8 and U+1F600 is F0 9F 98
+	// 80, so U+E000 sorts first, although its UTF-16 code unit is the larger.
+	bmp := dataEdge(parentA, "aa", DerivedFrom, "/\uE000", `"APPROVED"`)
+	astral := dataEdge(parentA, "aa", DerivedFrom, "/\U0001F600", `"APPROVED"`)
+	p3 := newTestRecord()
+	p3.Provenance.Upstream = []UpstreamEdge{bmp, astral}
+	bindCausalityForTest(p3)
+	mustBeClean(t, p3)
+}
+
 // =============================================================================
 // §4.1 — selector grammar; §3.2.1 — control/data split
 // =============================================================================

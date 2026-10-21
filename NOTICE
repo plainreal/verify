@@ -14,9 +14,10 @@ two implementations of the same check: a browser page and a standalone CLI.
 
 Both read a record, canonicalize it (RFC 8785), hash it (SHA3-256, NIST FIPS
 202) and check an Ed25519 signature (RFC 8032). Both confirm the document
-carries the frozen top-level field set the published schema defines. The CLI
-additionally validates field values, the invariants decidable from a single
-artifact, and an RFC 3161 timestamp token against a caller-supplied root.
+carries the frozen top-level field set the published schema defines, and both
+validate field values and the invariants decidable from a single artifact
+(the page since v1.2.0, the CLI since v1.1.0). The CLI additionally checks an
+RFC 3161 timestamp token against a caller-supplied root.
 
 Every one of those operates on ONE artifact, held on its own. None of them
 consults a second record, an index, or anything this repository does not ship.
@@ -41,10 +42,9 @@ That boundary is load-bearing, and "producer versus verifier" does not
 capture it. The Apache-2.0 patent grant in section 3 reaches those claims
 necessarily infringed by a contribution, alone or in combination with the
 Work, and the Work is whatever this repository contains when it is
-published. Several VERIFIER-side techniques are
-separately patent-pending. They are not practiced here, so they are outside
-the grant today; they enter it the moment code practicing them is committed,
-silently, with no licence file changed and nobody prompted to re-read this.
+published. Code added here joins the Work, and the grant reaches whatever
+claims that code practises, silently, with no licence file changed and nobody
+prompted to re-read this.
 
 The safe rule: this repository verifies ONE artifact, held on its own.
 Anything that needs a SECOND artifact, an index, or a renewal obligation
@@ -58,13 +58,13 @@ That is a correction, not a widening. The rule previously read "verifies ONE
 artifact's signature, and nothing else", which stopped describing the code
 when the frozen-field-set check was added in v1.0.1, and stopped describing it
 further when the CLI arrived in v1.1.0 with field validation, single-artifact
-invariants and RFC 3161 verification. None of those practices a patent-pending
-technique; all of them are more than a signature. The
-line that actually carries the patent boundary is "does it need a second
-artifact", because every technique listed above is a technique for relating
-two or more records. Phrasing the rule that way makes it testable: the
-release preflight fails on any edge traversal, parent fetch, index query or
-renewal check in the payload.
+invariants and RFC 3161 verification. All of them are more than a signature,
+and all of them are decided from the one artifact.
+
+Phrasing the rule as "does it need a second artifact" makes it testable.
+Neither tool can load one: the CLI's verification package opens no file and
+no network connection, and the page's Content-Security-Policy forbids it any
+request at all. The release preflight fails if either gains a way to.
 
 --------------------------------------------------------------------------
 PATENTS
@@ -73,14 +73,14 @@ PATENTS
 Patents pending.
 
 Application numbers are not listed here. U.S. provisional applications are not
-published, so a number you cannot look up is an assertion rather than evidence
--- and this project does not ask you to accept assertions. They will be named
+published, so a number you cannot look up is an assertion rather than
+evidence, and this project does not ask you to accept assertions. They will be named
 here when the corresponding non-provisional applications publish and the text
 becomes publicly readable.
 
-The scope note above is the operative statement for anyone building on this
-code: what is patent-pending is not practiced in this repository, and so is
-outside the Apache-2.0 section 3 grant today.
+The scope note above describes what this code does: it checks one artifact,
+held on its own, and has no way to load another. It is not a statement about
+the scope of any patent claim, and should not be read as one.
 
 --------------------------------------------------------------------------
 EMBEDDED TYPEFACES

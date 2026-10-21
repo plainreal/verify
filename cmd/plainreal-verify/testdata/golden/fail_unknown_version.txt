@@ -1,4 +1,4 @@
-argv --record testdata/bad/unknown_version.json --key testdata/timestamped_record.pub.pem
+argv --record testdata/bad/unknown_version.json --key testdata/bad/signed_defects.pub.pem
 exit 2
 --- stdout ---
 PlainReal Record Verification
@@ -12,10 +12,14 @@ Principal:       agent:credit-scoring-v2
 Action Type:     credit_decision
 Created:         2026-04-20T14:30:00.000000000Z
 Model:           openai / gpt-4-turbo-2024-04-09
-Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b
+Record Hash:     a879b8b92fbb55792e23d48ebce04bbf36e01d551f96da46e4a76fe1209b8518
+Signing Key ID:  77e66b897912fbaee29bee34cf1560c8045896bb3abf7588e63bb16c2ce84fef
 
 WHAT WAS CHECKED
   [x] JSON Parse
+  [x] Signing Key
+  [x] Record Hash Computed
+  [x] Signature
   [!] Record Version: unsupported record version: 9.9.9; supported: 1.0.0
 
 COULD NOT VERIFY
@@ -26,8 +30,8 @@ No verdict was reached. This says nothing about the record.
 
   Also runs in a browser: https://verify.plainreal.com
   Source of both:         https://github.com/plainreal/verify
-  A release gate requires the two to agree wherever both check.
-  This tool checks more of a record than the page does.
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
   Nothing was contacted to produce this result.
 --- stderr ---
 unsupported record version: 9.9.9; supported: 1.0.0

@@ -12,26 +12,22 @@ Principal:       agent:credit-scoring-v2
 Action Type:     credit_decision
 Created:         2026-04-20T14:30:00.000000000Z
 Model:           openai / gpt-4-turbo-2024-04-09
-Record Hash:     28847586860d4195c0ca9e00dfcee6aa0d4ebe442a09f83e8a9b4014757026a2
 Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b
 
 WHAT WAS CHECKED
   [x] JSON Parse
-  [x] Record Version
-  [x] TIER-A Validation + Local Invariants
-  [x] Record Hash Computed
-  [!] Signature: record declares signing_key_id dd0148d7d15aad9d…, the supplied key is e8a825047e13f637…
+  [!] Signing Key: record declares signing_key_id dd0148d7d15aad9d…, the supplied key is e8a825047e13f637…
 
 DIFFERENT SIGNING KEY
-Reason: signed by a different key: this is not the public key that signed this record, which is NOT the same as the record having been altered
+Reason: different key: the record names a signing key other than the one you supplied, which is NOT the same as the record having been altered
 
-This record was signed by a key other than the one you supplied.
+This record names a signing key other than the one you supplied.
 That is NOT a failed signature and NOT evidence of tampering.
-The record names the key that signed it; supply that key to check it.
+Supply the key it names to check it.
 
   Also runs in a browser: https://verify.plainreal.com
   Source of both:         https://github.com/plainreal/verify
-  A release gate requires the two to agree wherever both check.
-  This tool checks more of a record than the page does.
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
   Nothing was contacted to produce this result.
 --- stderr ---

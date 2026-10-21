@@ -41,6 +41,13 @@ func ValidateArtifactBytes(raw []byte) (*Record, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	// A document JCS cannot canonicalize has no record_hash, so it is not a
+	// conformant record whatever its fields say. encoding/json reads
+	// 9007199254740993 into a float64 field without complaint (rounded); the
+	// browser page's reader refuses it, and so does this.
+	if _, err := CanonicalizeJSON(raw); err != nil {
+		return nil, nil, err
+	}
 	want, cErr := CausalityHashFromBytes(raw)
 	return p, p.ValidateFields(want, cErr), nil
 }
@@ -337,8 +344,8 @@ func (p *Record) validateProvenance() []string {
 	var issues []string
 	pr := &p.Provenance
 
-	if pr.SchemaVersion != EnvelopeSchemaVersion {
-		issues = append(issues, fmt.Sprintf("provenance.schema_version (want %q)", EnvelopeSchemaVersion))
+	if !IsAcceptedEnvelopeVersion(pr.SchemaVersion) {
+		issues = append(issues, fmt.Sprintf("provenance.schema_version (%q; want 1.x.y, the major this verifier implements)", pr.SchemaVersion))
 	}
 	if pr.WorkflowID == "" {
 		issues = append(issues, "provenance.workflow_id (sentinel is \"adhoc\", never empty)")
@@ -487,7 +494,7 @@ func (p *Record) validateUpstreamEdges() []string {
 	// was signed, so re-sorting would silently "fix" an artifact whose bytes
 	// are not what the producer claimed.
 	for i := 1; i < len(edges); i++ {
-		if edgeSortKey(edges[i-1]) > edgeSortKey(edges[i]) {
+		if compareEdges(edges[i-1], edges[i]) > 0 {
 			issues = append(issues, fmt.Sprintf(
 				"provenance.upstream (not sorted: [%d] must sort before [%d]; order is ascending by (record_hash, consumed_output_selector, relationship))", i-1, i))
 			break
@@ -497,13 +504,32 @@ func (p *Record) validateUpstreamEdges() []string {
 	return issues
 }
 
-// edgeSortKey builds §4.3's ordering key: (record_hash,
-// consumed_output_selector, relationship).
+// compareEdges is §4.3's order: ascending by record_hash, then
+// consumed_output_selector, then relationship, each compared as bytes (which
+// for UTF-8 is code-point order).
 //
-// The components are joined with 0x1F (unit separator) rather than concatenated
-// so that a selector's trailing bytes cannot borrow from the next component and
-// make two distinct edges compare equal. record_hash is fixed-width 64-hex,
-// but the selector is not, so the separator is doing real work.
+// It compares the components in turn. An earlier version compared the three
+// joined with 0x1F, which agrees with the tuple order only while no selector
+// contains a byte below 0x1F: for selectors "/a" and "/a\x01" under one
+// record_hash, the joined form put "/a\x01" first and refused a record that
+// was sorted.
+func compareEdges(a, b UpstreamEdge) int {
+	if c := strings.Compare(a.RecordHash, b.RecordHash); c != 0 {
+		return c
+	}
+	if c := strings.Compare(a.ConsumedOutputSelector, b.ConsumedOutputSelector); c != 0 {
+		return c
+	}
+	return strings.Compare(string(a.Relationship), string(b.Relationship))
+}
+
+// edgeSortKey is I10's identity for an edge: (record_hash,
+// consumed_output_selector, relationship) as one map key.
+//
+// The components are joined with 0x1F so that a selector's trailing bytes
+// cannot borrow from the next component and make two distinct edges collide.
+// relationship is a closed enum with no 0x1F in it, so the last separator is
+// unambiguous. It is a key for equality only; order is compareEdges.
 func edgeSortKey(e UpstreamEdge) string {
 	const sep = "\x1f"
 	return e.RecordHash + sep + e.ConsumedOutputSelector + sep + string(e.Relationship)
@@ -517,8 +543,8 @@ func (p *Record) validateGovernanceContext() []string {
 	var issues []string
 	g := &p.GovernanceContext
 
-	if g.SchemaVersion != EnvelopeSchemaVersion {
-		issues = append(issues, fmt.Sprintf("governance_context.schema_version (want %q)", EnvelopeSchemaVersion))
+	if !IsAcceptedEnvelopeVersion(g.SchemaVersion) {
+		issues = append(issues, fmt.Sprintf("governance_context.schema_version (%q; want 1.x.y, the major this verifier implements)", g.SchemaVersion))
 	}
 	if !IsValidOversightMode(g.OversightMode) {
 		issues = append(issues, "governance_context.oversight_mode")
@@ -609,8 +635,8 @@ func (p *Record) validateExecutionContext() []string {
 	var issues []string
 	x := &p.ExecutionContext
 
-	if x.SchemaVersion != EnvelopeSchemaVersion {
-		issues = append(issues, fmt.Sprintf("execution_context.schema_version (want %q)", EnvelopeSchemaVersion))
+	if !IsAcceptedEnvelopeVersion(x.SchemaVersion) {
+		issues = append(issues, fmt.Sprintf("execution_context.schema_version (%q; want 1.x.y, the major this verifier implements)", x.SchemaVersion))
 	}
 	// The agent's own code / prompt-template version. ABSA attests the SDK
 	// binary, the model fields attest the model, this attests the agent —

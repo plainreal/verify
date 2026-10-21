@@ -1,4 +1,4 @@
-argv --record testdata/bad/missing_field.json --key testdata/timestamped_record.pub.pem
+argv --record testdata/bad/missing_field.json --key testdata/bad/signed_defects.pub.pem
 exit 1
 --- stdout ---
 PlainReal Record Verification
@@ -12,22 +12,26 @@ Principal:       agent:credit-scoring-v2
 Action Type:     credit_decision
 Created:         2026-04-20T14:30:00.000000000Z
 Model:           openai / gpt-4-turbo-2024-04-09
-Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b
+Record Hash:     421a2e48724081333886ce6b536265df697daef7a447e219a0fd1af04e6754e8
+Signing Key ID:  77e66b897912fbaee29bee34cf1560c8045896bb3abf7588e63bb16c2ce84fef
 
 WHAT WAS CHECKED
   [x] JSON Parse
+  [x] Signing Key
+  [x] Record Hash Computed
+  [x] Signature
   [x] Record Version
-  [!] TIER-A Validation + Local Invariants: 1 issue(s): policy_version_hash
+  [!] Record Structure: missing top-level key(s) policy_version_hash (all 33 fields are required; a field that does not apply carries its defined sentinel)
 
 NOT A CONFORMANT RECORD
-Reason: TIER-A validation failed
+Reason: missing top-level key(s) policy_version_hash (all 33 fields are required; a field that does not apply carries its defined sentinel); the signature is valid, so this is not a claim that anything was altered
 
 This document is not shaped like a record this tool can check.
 That is a statement about its structure, not an accusation.
 
   Also runs in a browser: https://verify.plainreal.com
   Source of both:         https://github.com/plainreal/verify
-  A release gate requires the two to agree wherever both check.
-  This tool checks more of a record than the page does.
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
   Nothing was contacted to produce this result.
 --- stderr ---

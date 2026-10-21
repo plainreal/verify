@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -189,6 +190,10 @@ type VerificationResult struct {
 	// fields directly in the result so an auditor sees them without parsing
 	// the record body. Both are required v1.0.0 fields, always present.
 	Metadata ResultMetadata `json:"metadata"`
+
+	// view is what the human report shows about the record, read once from
+	// its bytes. Unexported, so not part of the JSON contract.
+	view recordView
 }
 
 // DeferredInvariant names an invariant this verification level did NOT check,
@@ -362,192 +367,232 @@ func validatePublicKeyHex(s string) (string, error) {
 // Record loading
 // =============================================================================
 
-// loadRecord reads a record JSON file and parses it. No
-// signature verification is performed here — that is verifyRecord's job.
-// TIER-A field-format validation is also NOT enforced at load time: a
-// TIER-A record with a missing field should still produce a structured
-// VerificationResult (with a failed TIER-A Validation check) rather than
-// an input ERROR exit, so the auditor sees a meaningful report.
-// It returns the RAW BYTES alongside the parsed record. The bytes are the
-// evidence; the struct is only an interpretation of them. Every hash this CLI
-// recomputes must come from the bytes (§4.6.1) — see verifyRecord.
-func loadRecord(path string) ([]byte, *verifycore.Record, error) {
+// loadRecord reads a record file. It is a READER, not a judge: the only thing
+// it refuses is a file that is not JSON at all, which was never a record, so
+// nothing was checked and there is nothing to accuse (exit 2). Everything else,
+// a duplicate key, an unknown field, a wrong type, is a verdict about the
+// artifact, and verifyRecord reaches it in the order the browser page does.
+//
+// It returns the RAW BYTES alongside. The bytes are the evidence; the struct is
+// only an interpretation of them. Every hash this CLI recomputes must come
+// from the bytes (§4.6.1) — see verifyRecord.
+func loadRecord(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, nil, fmt.Errorf("read record file %s: %w", path, err)
+		return nil, fmt.Errorf("read record file %s: %w", path, err)
 	}
-	p, err := verifycore.RecordFromJSON(data)
-	if err != nil {
-		// Two different failures hide behind one error here, and telling a
-		// reader the wrong one is the mistake this tool has made before.
-		//
-		// A file that is not JSON at all was never a record, so nothing was
-		// checked and there is nothing to accuse: that is an input problem
-		// (exit 2). A file that IS JSON but carries a field outside the frozen
-		// 33, or a duplicate key, was read and judged: that is a verdict about
-		// the artifact (exit 1).
-		//
-		// The browser page draws exactly this line and says why: crying tamper
-		// on garbage makes the real tamper result look like theatre, and it is
-		// the first thing a sceptical reader tries.
-		if !json.Valid(data) {
-			return nil, nil, fmt.Errorf("%s is not JSON, so it is not a record; nothing was checked", path)
-		}
-		return nil, nil, rejectArtifact("%s is not a conformant record: %v", path, err)
+	// The browser page draws exactly this line and says why: crying tamper on
+	// garbage makes the real tamper result look like theatre, and it is the
+	// first thing a sceptical reader tries.
+	if !json.Valid(data) {
+		return nil, fmt.Errorf("%s is not JSON, so it is not a record; nothing was checked", path)
 	}
-	return data, p, nil
+	return data, nil
 }
 
 // =============================================================================
 // Verification — the critical path
 // =============================================================================
 
-// verifyRecord runs every verification check against the supplied record,
-// public key, and optional RFC 3161 timestamp path. It short-circuits on the
-// first failed check (subsequent checks would be meaningless), but records
-// every check it ran in result.Checks in execution order. The returned
-// result is always non-nil; error is reserved for impossible-to-report
-// internal faults (e.g., JSON marshaling of the record shape failing).
-// It takes the artifact's RAW BYTES because §4.6.1 makes them, not the parsed
-// struct, the thing that gets hashed. An auditor holds a file and a public key;
-// this function is that auditor.
-func verifyRecord(raw []byte, record *verifycore.Record, publicKeyHex, tsrPath string, tsaRoots *x509.CertPool) (*VerificationResult, error) {
-	result := &VerificationResult{
-		ToolVersion:    Version,
-		SchemaVersions: verifycore.SupportedRecordVersions(),
-		RecordID:       record.RecordID,
-		RecordVersion:  record.RecordVersion,
-		EvidenceTier:   string(record.EvidenceTier),
-		Checks:         []Check{},
-		Level:          0, // record alone; Level 1 (chain) is M3
-		// Stated up front so they appear even when a later check fails and the
-		// function returns early.
-		InvariantsChecked:  level0Invariants,
-		InvariantsDeferred: level0Deferred,
-		// Copy the capture-classification fields up front so they appear in
-		// the emitted result even when a later check fails.
-		Metadata: ResultMetadata{
-			CaptureLayer:  record.CaptureLayer,
-			Consequential: record.Consequential,
-		},
+// The order of the questions is the browser page's, and it is the same order
+// in both tools so that both give the same verdict on the same bytes:
+//
+//  1. Is it a JSON object, read strictly (no duplicate keys, no unsafe
+//     integers)? Does it name its version, id and key? Is it sealed?
+//  2. Are the signature and key id well formed?
+//  3. Does it declare the key you supplied?            -> DIFFERENT SIGNING KEY
+//  4. Does the signature match the bytes?              -> FAILS VERIFICATION
+//  5. Is it a schema version this binary knows?        -> COULD NOT VERIFY
+//  6. Is it a conformant record: the 33 fields, their types, a known tier,
+//     and for TIER-A every field rule and the local invariants?
+//                                                      -> NOT A CONFORMANT RECORD
+//  7. The RFC 3161 token, when one is supplied.
+//
+// The signature comes before conformance on purpose. A record edited after
+// sealing is ALTERED, and saying so is the most serious true thing about it,
+// even when the edit also broke a rule. Until v1.2.0 this binary checked the
+// fields first and reported such a record as non-conformant, while the page
+// reported it as altered; the two now agree, and a release gate holds them to
+// the same verdict.
+
+var (
+	signatureHexRe = regexp.MustCompile(`^[0-9a-f]{128}$`)
+	keyIDHexRe     = regexp.MustCompile(`^[0-9a-f]{64}$`)
+)
+
+// rawString returns the string value of a top-level key, and whether the key
+// is present with a string value. Read from the generic object, never from the
+// struct, because these questions are asked before the record is known to
+// decode.
+func rawString(obj map[string]json.RawMessage, key string) (string, bool) {
+	v, ok := obj[key]
+	if !ok {
+		return "", false
+	}
+	var s string
+	if err := json.Unmarshal(v, &s); err != nil {
+		return "", false
+	}
+	return s, true
+}
+
+// verifyRecord runs every verification check against the artifact's RAW BYTES
+// and the supplied public key, in the order above. It stops at the first
+// failed check, because the later ones would describe a record that is not
+// what it claims, but records every check it ran in result.Checks, in order.
+// The returned result is always non-nil unless error is non-nil; error is for
+// a document that is not a JSON object read strictly, and for
+// impossible-to-report internal faults.
+//
+// It takes the raw bytes because §4.6.1 makes them, not a parsed struct, the
+// thing that gets hashed. An auditor holds a file and a public key; this
+// function is that auditor.
+func verifyRecord(raw []byte, publicKeyHex, tsrPath string, tsaRoots *x509.CertPool) (*VerificationResult, error) {
+	// Step 1. The strict read. RecordHashFromBytes rejects duplicate keys,
+	// unsafe integers and a non-object, exactly as the page's reader does, and
+	// the hash it returns is the one the signature is checked against below.
+	//
+	// The whole document is canonicalized first, signing_attestation
+	// included. RecordHashFromBytes removes that key before canonicalizing, so
+	// on its own it never saw an unsafe integer or an out-of-range number
+	// written there, and the CLI called such a record FAILS VERIFICATION where
+	// the page, whose reader refuses the number wherever it is, says it is not
+	// a record.
+	if _, err := verifycore.CanonicalizeJSON(raw); err != nil {
+		return nil, rejectArtifact("%s", strings.TrimPrefix(err.Error(), "record: "))
+	}
+	hash, err := verifycore.RecordHashFromBytes(raw)
+	if err != nil {
+		return nil, rejectArtifact("%s", strings.TrimPrefix(err.Error(), "record: "))
+	}
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return nil, rejectArtifact("%v", err)
 	}
 
-	// Check 1 — JSON parsed (implicit; recorded for transparency).
+	view := viewOf(raw)
+	result := &VerificationResult{
+		view:               view,
+		ToolVersion:        Version,
+		SchemaVersions:     verifycore.SupportedRecordVersions(),
+		RecordID:           view.RecordID,
+		RecordVersion:      view.RecordVersion,
+		EvidenceTier:       view.EvidenceTier,
+		Checks:             []Check{},
+		Level:              0, // record alone; Level 1 (chain) is not this binary
+		InvariantsChecked:  level0Invariants,
+		InvariantsDeferred: level0Deferred,
+		Metadata: ResultMetadata{
+			CaptureLayer:  view.CaptureLayer,
+			Consequential: view.Consequential,
+		},
+	}
 	result.Checks = append(result.Checks, Check{
 		Name:    "JSON Parse",
 		Passed:  true,
-		Details: "Record JSON parsed successfully",
+		Details: "read strictly: no duplicate keys, no integers beyond ±(2^53-1)",
 	})
 
-	// Check 2 — record_version supported by this CLI. Accepts every
-	// version in verifycore.SupportedRecordVersions() so older artifacts
-	// continue to verify byte-identically after a schema bump.
-	if !verifycore.IsSupportedRecordVersion(record.RecordVersion) {
-		result.Checks = append(result.Checks, Check{
-			Name:    "Record Version",
-			Passed:  false,
-			Details: unsupportedVersionMessage(record.RecordVersion),
-		})
-		result.Outcome = OutcomeCouldNotVerify
-		result.FailureReason = unsupportedVersionMessage(record.RecordVersion)
-		return result, nil
-	}
-	result.Checks = append(result.Checks, Check{
-		Name:    "Record Version",
-		Passed:  true,
-		Details: record.RecordVersion,
-	})
-
-	// Check 2b — evidence_tier must be a recognized value. An unrecognized tier
-	// (a typo, an empty string, or a fabricated "PRIMARY-EVIDENCE") must not
-	// pass as a clean VERIFIED: because the TIER-A field validation below only
-	// runs when the tier is exactly TIER-A, an unknown tier would skip every
-	// forensic-field check and let a hollow artifact borrow TIER-A's
-	// credibility on the strength of a bare signature alone.
-	if !isKnownTier(record.EvidenceTier) {
-		result.Checks = append(result.Checks, Check{
-			Name:   "Evidence Tier",
-			Passed: false,
-			Details: fmt.Sprintf("unrecognized evidence_tier %q (must be one of %s, %s, %s)",
-				record.EvidenceTier, verifycore.TierA, verifycore.TierB, verifycore.TierC),
-		})
-		result.Outcome = OutcomeNotARecord
-		result.FailureReason = fmt.Sprintf("unrecognized evidence_tier %q", record.EvidenceTier)
-		return result, nil
-	}
-
-	// Check 3 — TIER-A field validation + the local invariants (only for
-	// TIER-A artifacts).
-	//
-	// ValidateArtifactBytes, not ValidateTierA: I3's expected digest must be
-	// computed from THIS artifact's provenance sub-tree as generic JSON. The
-	// struct path would drop an unknown envelope key and fail I3 on an artifact
-	// a newer producer legitimately emitted (§4.6.1 / §6).
-	if record.EvidenceTier == verifycore.TierA {
-		_, issues, vErr := verifycore.ValidateArtifactBytes(raw)
-		if vErr != nil {
-			return nil, fmt.Errorf("validate artifact: %w", vErr)
+	var missing []string
+	for _, k := range []string{"record_version", "record_id", "signing_key_id"} {
+		if _, ok := obj[k]; !ok {
+			missing = append(missing, k)
 		}
-		if len(issues) > 0 {
-			result.ValidationIssues = issues
-			result.Checks = append(result.Checks, Check{
-				Name:    "TIER-A Validation + Local Invariants",
-				Passed:  false,
-				Details: fmt.Sprintf("%d issue(s): %s", len(issues), strings.Join(issues, ", ")),
-			})
-			result.Outcome = OutcomeNotARecord
-			result.FailureReason = "TIER-A validation failed"
-			return result, nil
-		}
-		result.Checks = append(result.Checks, Check{
-			Name:   "TIER-A Validation + Local Invariants",
-			Passed: true,
-			Details: fmt.Sprintf("schema %s: all required fields valid; local invariants hold (%s)",
-				record.RecordVersion, strings.Join(level0Invariants, "; ")),
-		})
+	}
+	if len(missing) > 0 {
+		return nil, rejectArtifact("valid JSON, but missing %s, which every record carries, "+
+			"so there is no record here to verify", strings.Join(missing, ", "))
 	}
 
-	// Check 4 — signing_attestation present (empty = not sealed).
-	if record.SigningAttestation == "" {
+	// A record-shaped document with no signature was never sealed. That is a
+	// different thing from a broken signature and must not read as one.
+	if _, sealed := obj["signing_attestation"]; !sealed {
 		result.Checks = append(result.Checks, Check{
 			Name:    "Signature Present",
 			Passed:  false,
-			Details: "signing_attestation is empty",
+			Details: "no signing_attestation",
 		})
 		result.Outcome = OutcomeNotARecord
 		result.FailureReason = "record is not sealed (no signature)"
 		return result, nil
 	}
 
-	// Check 5 — recompute record_hash over the 32 signed fields, FROM THE
-	// ARTIFACT'S OWN BYTES as generic JSON (§4.6.1).
-	//
-	// NOT record.ComputeRecordHash(): unmarshaling into the typed struct and
-	// re-marshaling silently drops any key this binary does not know, producing
-	// a different hash and rejecting a valid artifact. The failure would present
-	// to an auditor as "signature invalid" — indistinguishable from tampering —
-	// and would make §6's promise that envelopes may grow additively false.
-	// Hash the bytes you were given; interpret only the keys you know.
-	hash, err := verifycore.RecordHashFromBytes(raw)
-	if err != nil {
-		// The bytes already parsed as a record, so a canonicalization failure
-		// now is a property of the DOCUMENT -- an integer past ±(2^53-1), a
-		// duplicate key -- and not a fault in this tool.
-		return nil, rejectArtifact("compute record hash: %v", err)
+	// Step 2. A signature field holding something that is not a signature is a
+	// statement about this record, so it does not verify. It used to be
+	// COULD_NOT_VERIFY here, "no verdict", which undersold it.
+	signature, _ := rawString(obj, "signing_attestation")
+	if !signatureHexRe.MatchString(signature) {
+		result.Checks = append(result.Checks, Check{
+			Name:    "Signature",
+			Passed:  false,
+			Details: "signing_attestation is not a 128-character lowercase hex signature",
+		})
+		result.Outcome = OutcomeFailsVerification
+		result.FailureReason = "signing_attestation is not a 128-character lowercase hex signature, " +
+			"so there is nothing to check it against"
+		return result, nil
 	}
+	keyID, _ := rawString(obj, "signing_key_id")
+	if !keyIDHexRe.MatchString(keyID) {
+		result.Checks = append(result.Checks, Check{
+			Name:    "Signature",
+			Passed:  false,
+			Details: "signing_key_id is not a 64-character lowercase hex fingerprint",
+		})
+		result.Outcome = OutcomeFailsVerification
+		result.FailureReason = "signing_key_id is not a 64-character lowercase hex fingerprint"
+		return result, nil
+	}
+
+	// Step 3. Is it signed by the key we were handed? BEFORE the signature,
+	// deliberately: checking against a key the record says is not its own
+	// would report a failed signature for a record that is very likely fine.
+	//
+	// signing_key_id is SHA3-256 of the raw public key (§4.5) and it is a
+	// signed field, so a record whose signature verifies under your key while
+	// naming another key misstates its own signer. Until v1.2.0 this binary
+	// checked the key id only after a signature failed, and so VERIFIED that
+	// record; the page did not. Now neither does.
+	pubBytes, decErr := hex.DecodeString(publicKeyHex)
+	if decErr != nil {
+		return nil, fmt.Errorf("decode public key: %w", decErr)
+	}
+	if want := verifycore.HashSHA3256(pubBytes); keyID != want {
+		result.Checks = append(result.Checks, Check{
+			Name:   "Signing Key",
+			Passed: false,
+			Details: fmt.Sprintf("record declares signing_key_id %s…, the supplied key is %s…",
+				keyID[:16], want[:16]),
+		})
+		result.Outcome = OutcomeUnknownKey
+		// "Names", not "was signed by": the declared id is all that was compared.
+		// Usually the record was signed by the key it names; when its signature
+		// verifies under yours instead, it misstates its own signer. Either
+		// way the record does not name the key you supplied.
+		// "different key" stays at the front: failure_reason is the machine
+		// contract, and scripts match on it.
+		result.FailureReason = "different key: the record names a signing key other than the one you supplied, " +
+			"which is NOT the same as the record having been altered"
+		return result, nil
+	}
+	result.Checks = append(result.Checks, Check{
+		Name:    "Signing Key",
+		Passed:  true,
+		Details: "the record declares the key you supplied",
+	})
+
+	// Step 4. The signature, over record_hash recomputed FROM THE ARTIFACT'S
+	// OWN BYTES as generic JSON (§4.6.1). Not a struct round trip: unmarshaling
+	// and re-marshaling drops any key this binary does not know, which would
+	// reject a valid artifact as "signature invalid", indistinguishable from
+	// tampering, and make §6's additive-evolution promise false.
 	result.RecordHash = hash
 	result.Checks = append(result.Checks, Check{
 		Name:    "Record Hash Computed",
 		Passed:  true,
 		Details: hash,
 	})
-
-	// Check 6 — Ed25519 signature verification (the critical step).
-	pubBytes, decErr := hex.DecodeString(publicKeyHex)
-	if decErr != nil {
-		return nil, fmt.Errorf("decode public key: %w", decErr)
-	}
-	valid, err := verifycore.VerifyWithPublicKey(publicKeyHex, hash, record.SigningAttestation)
+	valid, err := verifycore.VerifyWithPublicKey(publicKeyHex, hash, signature)
 	if err != nil {
 		result.Checks = append(result.Checks, Check{
 			Name:    "Signature",
@@ -560,33 +605,6 @@ func verifyRecord(raw []byte, record *verifycore.Record, publicKeyHex, tsrPath s
 	}
 	result.SignatureValid = valid
 	if !valid {
-		// Distinguish "this is not the key that signed it" from "this record was
-		// altered". Both produce a failed Ed25519 check, and reporting the first
-		// as the second accuses an innocent record of tampering.
-		//
-		// signing_key_id is SHA3-256 of the raw public key (§4.5), so the record
-		// says which key signed it and we can compare that to the key we were
-		// handed. The browser page has kept these apart since v1.0.0 precisely
-		// because collapsing them is how a verification tool starts lying; the
-		// CLI blurred them, and the JSON failure_reason -- the machine contract
-		// -- said "tampered" for a record that was fine.
-		//
-		// The check is on the DECLARED key id, which a tamperer could also
-		// rewrite. That costs nothing: if it was rewritten, the signature fails
-		// anyway and the worst outcome is a truthful "signed by a different key"
-		// on a record that is indeed not verifiable with this key.
-		if want := verifycore.HashSHA3256(pubBytes); record.SigningKeyID != "" && record.SigningKeyID != want {
-			result.Checks = append(result.Checks, Check{
-				Name:   "Signature",
-				Passed: false,
-				Details: fmt.Sprintf("record declares signing_key_id %s…, the supplied key is %s…",
-					record.SigningKeyID[:min(16, len(record.SigningKeyID))], want[:16]),
-			})
-			result.Outcome = OutcomeUnknownKey
-			result.FailureReason = "signed by a different key: this is not the public key that signed this record, " +
-				"which is NOT the same as the record having been altered"
-			return result, nil
-		}
 		result.Checks = append(result.Checks, Check{
 			Name:    "Signature",
 			Passed:  false,
@@ -601,6 +619,78 @@ func verifyRecord(raw []byte, record *verifycore.Record, publicKeyHex, tsrPath s
 		Passed:  true,
 		Details: "Ed25519 signature valid",
 	})
+
+	// Step 5. A schema version this binary knows. COULD NOT VERIFY, not a
+	// failure: the field set below is version-specific, and a newer record is
+	// very likely fine.
+	if !verifycore.IsSupportedRecordVersion(view.RecordVersion) {
+		result.Checks = append(result.Checks, Check{
+			Name:    "Record Version",
+			Passed:  false,
+			Details: unsupportedVersionMessage(view.RecordVersion),
+		})
+		result.Outcome = OutcomeCouldNotVerify
+		result.FailureReason = unsupportedVersionMessage(view.RecordVersion)
+		return result, nil
+	}
+	result.Checks = append(result.Checks, Check{
+		Name:    "Record Version",
+		Passed:  true,
+		Details: view.RecordVersion,
+	})
+
+	// Step 6. Conformance. The signature is valid, so each refusal below says
+	// so: the record was signed like this.
+	notConformant := func(name, details, reason string, issues []string) (*VerificationResult, error) {
+		result.Checks = append(result.Checks, Check{Name: name, Passed: false, Details: details})
+		result.Outcome = OutcomeNotARecord
+		result.FailureReason = reason + "; the signature is valid, so this is not a claim that anything was altered"
+		result.ValidationIssues = issues
+		return result, nil
+	}
+
+	// 6a. The 33 fields, frozen, and their JSON types.
+	record, err := verifycore.RecordFromJSON(raw)
+	if err != nil {
+		msg := strings.TrimPrefix(err.Error(), "record: ")
+		return notConformant("Record Structure", msg, msg, []string{msg})
+	}
+	result.Checks = append(result.Checks, Check{
+		Name:    "Record Structure",
+		Passed:  true,
+		Details: "all 33 fields present, none added, every JSON type as the schema defines",
+	})
+
+	// 6b. A tier that exists. A fabricated "PRIMARY-EVIDENCE" must not borrow
+	// TIER-A's credibility on the strength of a bare signature.
+	if !isKnownTier(record.EvidenceTier) {
+		return notConformant("Evidence Tier",
+			fmt.Sprintf("unrecognized evidence_tier %q (must be one of %s, %s, %s)",
+				record.EvidenceTier, verifycore.TierA, verifycore.TierB, verifycore.TierC),
+			fmt.Sprintf("unrecognized evidence_tier %q", record.EvidenceTier),
+			[]string{"evidence_tier"})
+	}
+
+	// 6c. TIER-A: every field rule and the local invariants. ValidateArtifactBytes,
+	// not ValidateTierA: I3's expected digest must come from THIS artifact's
+	// provenance as generic JSON (§4.6.1 / §6).
+	if record.EvidenceTier == verifycore.TierA {
+		_, issues, vErr := verifycore.ValidateArtifactBytes(raw)
+		if vErr != nil {
+			return nil, fmt.Errorf("validate artifact: %w", vErr)
+		}
+		if len(issues) > 0 {
+			return notConformant("TIER-A Validation + Local Invariants",
+				fmt.Sprintf("%d issue(s): %s", len(issues), strings.Join(issues, ", ")),
+				"TIER-A validation failed", issues)
+		}
+		result.Checks = append(result.Checks, Check{
+			Name:   "TIER-A Validation + Local Invariants",
+			Passed: true,
+			Details: fmt.Sprintf("schema %s: all required fields valid; local invariants hold (%s)",
+				record.RecordVersion, strings.Join(level0Invariants, "; ")),
+		})
+	}
 
 	// Check 7 — RFC 3161 timestamp (optional).
 	if tsrPath != "" {
@@ -636,6 +726,39 @@ func verifyRecord(raw []byte, record *verifycore.Record, publicKeyHex, tsrPath s
 	result.Verified = true
 	result.Outcome = OutcomeVerified
 	return result, nil
+}
+
+// recordView is what the report shows about a record, read from its bytes.
+//
+// Not from the decoded struct: a record can now be refused AFTER its signature
+// verified, for a field the struct cannot hold, and the report must still say
+// which record it is about. A value of the wrong type shows as absent.
+type recordView struct {
+	RecordID, RecordVersion, EvidenceTier, Principal, ActionType, CreatedAt string
+	ModelProvider, ModelName, SigningKeyID, CaptureLayer                    string
+	Consequential                                                           bool
+	Upstream                                                                int
+}
+
+func viewOf(raw []byte) recordView {
+	var obj map[string]json.RawMessage
+	_ = json.Unmarshal(raw, &obj)
+	str := func(k string) string { s, _ := rawString(obj, k); return s }
+	v := recordView{
+		RecordID: str("record_id"), RecordVersion: str("record_version"),
+		EvidenceTier: str("evidence_tier"), Principal: str("principal_identity"),
+		ActionType: str("action_type"), CreatedAt: str("created_at"),
+		ModelProvider: str("model_provider"), ModelName: str("model_name"),
+		SigningKeyID: str("signing_key_id"), CaptureLayer: str("capture_layer"),
+	}
+	_ = json.Unmarshal(obj["consequential"], &v.Consequential)
+	var prov struct {
+		Upstream []json.RawMessage `json:"upstream"`
+	}
+	if json.Unmarshal(obj["provenance"], &prov) == nil {
+		v.Upstream = len(prov.Upstream)
+	}
+	return v
 }
 
 // isKnownTier reports whether t is one of the three defined evidence tiers.
@@ -844,7 +967,7 @@ func printJSON(w io.Writer, r *VerificationResult) error {
 
 // printHuman writes the human-readable verification report. Plain ASCII
 // markers ([x] / [!]) for cross-terminal and clipboard-copy compatibility.
-func printHuman(w io.Writer, r *VerificationResult, p *verifycore.Record, verbose bool, c palette) {
+func printHuman(w io.Writer, r *VerificationResult, p recordView, verbose bool, c palette) {
 	// The tool and schema versions belong IN the report.
 	//
 	// This output is meant to be pasted into an audit file or attached to a
@@ -869,8 +992,8 @@ func printHuman(w io.Writer, r *VerificationResult, p *verifycore.Record, verbos
 	// Record header — print what we know even on a failed verification
 	// so the auditor can correlate the artifact under review.
 	printField(w, "Record ID", orDash(p.RecordID))
-	printField(w, "Evidence Tier", orDash(string(p.EvidenceTier)))
-	printField(w, "Principal", orDash(p.PrincipalIdentity))
+	printField(w, "Evidence Tier", orDash(p.EvidenceTier))
+	printField(w, "Principal", orDash(p.Principal))
 	printField(w, "Action Type", orDash(p.ActionType))
 	printField(w, "Created", orDash(p.CreatedAt))
 	if p.ModelProvider != "" || p.ModelName != "" {
@@ -909,10 +1032,10 @@ func printHuman(w io.Writer, r *VerificationResult, p *verifycore.Record, verbos
 		// Qualify the verdict so a valid signature is never mistaken for full
 		// TIER-A primary evidence when the artifact is not TIER-A, or when the
 		// RFC 3161 timestamp pillar was not verified (no .tsr supplied).
-		if p.EvidenceTier != verifycore.TierA {
+		if p.EvidenceTier != string(verifycore.TierA) {
 			fmt.Fprintln(w)
 			fmt.Fprintln(w, c.warn(fmt.Sprintf(
-				"CAVEAT: evidence_tier is %s. This is NOT TIER-A primary evidence.", orDash(string(p.EvidenceTier)))))
+				"CAVEAT: evidence_tier is %s. This is NOT TIER-A primary evidence.", orDash(p.EvidenceTier))))
 			fmt.Fprintln(w, c.warn("A valid signature here proves authorship."))
 			fmt.Fprintln(w, c.warn("It does not prove WORM commitment, RFC 3161 timestamping,"))
 			fmt.Fprintln(w, c.warn("or pre-execution input binding."))
@@ -956,10 +1079,10 @@ func printHuman(w io.Writer, r *VerificationResult, p *verifycore.Record, verbos
 		}
 		printFooter(w, c)
 
-		if len(p.Provenance.Upstream) > 0 {
+		if p.Upstream > 0 {
 			fmt.Fprintln(w)
 			fmt.Fprintf(w, "NOTE: this record commits to %d upstream edge(s). Their parents were NOT\n",
-				len(p.Provenance.Upstream))
+				p.Upstream)
 			fmt.Fprintln(w, "Their parents were not fetched or verified; that is a Level-1 check.")
 			fmt.Fprintln(w, "A valid signature proves what this record CLAIMS about its parents,")
 			fmt.Fprintln(w, "not that those claims are true.")
@@ -978,9 +1101,9 @@ func printHuman(w io.Writer, r *VerificationResult, p *verifycore.Record, verbos
 			fmt.Fprintf(w, "%s %s\n", c.dim("Reason:"), r.FailureReason)
 		}
 		fmt.Fprintln(w)
-		fmt.Fprintln(w, "This record was signed by a key other than the one you supplied.")
+		fmt.Fprintln(w, "This record names a signing key other than the one you supplied.")
 		fmt.Fprintln(w, "That is NOT a failed signature and NOT evidence of tampering.")
-		fmt.Fprintln(w, "The record names the key that signed it; supply that key to check it.")
+		fmt.Fprintln(w, "Supply the key it names to check it.")
 
 	case OutcomeCouldNotVerify:
 		fmt.Fprintln(w, c.warn(c.bold("COULD NOT VERIFY")))
@@ -1007,19 +1130,12 @@ func printHuman(w io.Writer, r *VerificationResult, p *verifycore.Record, verbos
 		}
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "This artifact could not be verified with the key you supplied.")
-		// The list is conditional because its accuracy is. When the record
-		// declares a signing_key_id we compared it (check 6) and reaching here
-		// means it MATCHED, so "you used the wrong key" is excluded. When it
-		// declares none -- possible below TIER-A, where field validation does
-		// not run -- there was nothing to compare and the possibility is live.
-		fmt.Fprintln(w, "Any of these would produce that result:")
+		// "You used the wrong key" is not on this list because it cannot be the
+		// reason: the record's signing_key_id was compared with the supplied
+		// key before the signature, and reaching here means they matched.
+		fmt.Fprintln(w, "Either of these would produce that result:")
 		fmt.Fprintln(w, "  1. The record was modified after it was signed.")
 		fmt.Fprintln(w, "  2. The signature is not a signature over these bytes.")
-		if p == nil || p.SigningKeyID == "" {
-			fmt.Fprintln(w, "  3. The key you gave is not the key that signed it.")
-			fmt.Fprintln(w, "     (This record declares no signing_key_id, so that")
-			fmt.Fprintln(w, "     could not be ruled out by comparing fingerprints.)")
-		}
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "This tool cannot tell you which, and does not guess.")
 	}
@@ -1296,7 +1412,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	// and the same shape as the defects this tool has already shipped twice.
 	type outcome struct {
 		path      string
-		record    *verifycore.Record
+		view      recordView
 		result    *VerificationResult
 		inputErr  error // could not read it at all; nothing was checked
 		rejectErr error // read, and refused as non-conformant
@@ -1305,7 +1421,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	for _, path := range flags.recordPaths {
 		o := outcome{path: path}
-		raw, record, err := loadRecord(path)
+		raw, err := loadRecord(path)
 		if err != nil {
 			// "I could not read your input" (exit 2) versus "this file is not a
 			// conformant record" (exit 1). Both used to exit 2, so a record
@@ -1319,7 +1435,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			outcomes = append(outcomes, o)
 			continue
 		}
-		result, err := verifyRecord(raw, record, publicKeyHex, flags.timestampPath, tsaRoots)
+		result, err := verifyRecord(raw, publicKeyHex, flags.timestampPath, tsaRoots)
 		if err != nil {
 			if isArtifactRejection(err) {
 				o.rejectErr = err
@@ -1330,7 +1446,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			continue
 		}
 		result.Path = path
-		o.record = record
+		o.view = result.view
 		o.result = result
 		outcomes = append(outcomes, o)
 	}
@@ -1399,16 +1515,20 @@ func run(args []string, stdout, stderr io.Writer) int {
 					arr = append(arr, o.result)
 					continue
 				}
-				reason := ""
+				// A refusal is a verdict and says so, as the single-record
+				// object does. A file that could not be read has no outcome:
+				// nothing was checked, so there is nothing to call it.
+				reason, outcome := "", Outcome("")
 				if o.inputErr != nil {
 					reason = o.inputErr.Error()
 				} else if o.rejectErr != nil {
-					reason = o.rejectErr.Error()
+					reason, outcome = o.rejectErr.Error(), OutcomeNotARecord
 				}
 				arr = append(arr, &VerificationResult{
 					ToolVersion:        Version,
 					SchemaVersions:     verifycore.SupportedRecordVersions(),
 					Verified:           false,
+					Outcome:            outcome,
 					Path:               o.path,
 					FailureReason:      reason,
 					Checks:             []Check{{Name: "Record Load", Passed: false, Details: reason}},
@@ -1432,7 +1552,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		case o.rejectErr != nil:
 			printRejection(stdout, o.path, o.rejectErr, false)
 		default:
-			printHuman(stdout, o.result, o.record, flags.verbose, newPalette(flags.colorMode, stdout))
+			printHuman(stdout, o.result, o.view, flags.verbose, newPalette(flags.colorMode, stdout))
 		}
 	} else {
 		batchTitle := "PlainReal Record Verification"
@@ -1605,7 +1725,10 @@ func printFooter(w io.Writer, c palette) {
 	// version split a single sentence at its comma, which is a clause boundary
 	// but not a reason: the sentence was simply too long. Shortening it was the
 	// fix, not choosing a better place to snap it.
-	fmt.Fprintln(w, c.dim("  A release gate requires the two to agree wherever both check."))
-	fmt.Fprintln(w, c.dim("  This tool checks more of a record than the page does."))
+	// "This tool checks more of a record than the page does" was true until
+	// v1.2.0, when the page gained the field rules and the invariants. What the
+	// CLI still has that the page lacks is the timestamp token.
+	fmt.Fprintln(w, c.dim("  A release gate tests that the two give the same verdict."))
+	fmt.Fprintln(w, c.dim("  This tool also checks an RFC 3161 token; the page does not."))
 	fmt.Fprintln(w, c.dim("  Nothing was contacted to produce this result."))
 }

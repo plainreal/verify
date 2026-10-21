@@ -1,17 +1,37 @@
-argv --record testdata/bad/extra_field.json --key testdata/timestamped_record.pub.pem
+argv --record testdata/bad/extra_field.json --key testdata/bad/signed_defects.pub.pem
 exit 1
 --- stdout ---
 PlainReal Record Verification
 plainreal-verify 0.0.0-GOLDEN  ·  record schema 1.0.0
-=====================================================
+─────────────────────────────────────────────────────
 
-Record:          testdata/bad/extra_field.json
+THE RECORD
+Record ID:       a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+Evidence Tier:   TIER-A
+Principal:       agent:credit-scoring-v2
+Action Type:     credit_decision
+Created:         2026-04-20T14:30:00.000000000Z
+Model:           openai / gpt-4-turbo-2024-04-09
+Record Hash:     02e6fa9aacddab9333c95b66e2492f9992d92f95f174ca8fef8e37300fe5ba2c
+Signing Key ID:  77e66b897912fbaee29bee34cf1560c8045896bb3abf7588e63bb16c2ce84fef
 
-Result: NOT A CONFORMANT RECORD
-Reason: testdata/bad/extra_field.json is not a conformant record: record: unknown top-level key "invented_field" (the 33-field list is frozen; new capability goes inside a versioned envelope, never as a new top-level field)
+WHAT WAS CHECKED
+  [x] JSON Parse
+  [x] Signing Key
+  [x] Record Hash Computed
+  [x] Signature
+  [x] Record Version
+  [!] Record Structure: unknown top-level key "invented_field" (the 33-field list is frozen; new capability goes inside a versioned envelope, never as a new top-level field)
 
-This file is not a conformant record. That is a judgment about the
-document, not a problem reading it: it was read, and it does not
-conform to the schema this binary verifies.
+NOT A CONFORMANT RECORD
+Reason: unknown top-level key "invented_field" (the 33-field list is frozen; new capability goes inside a versioned envelope, never as a new top-level field); the signature is valid, so this is not a claim that anything was altered
+
+This document is not shaped like a record this tool can check.
+That is a statement about its structure, not an accusation.
+
+  Also runs in a browser: https://verify.plainreal.com
+  Source of both:         https://github.com/plainreal/verify
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
+  Nothing was contacted to produce this result.
 --- stderr ---
-testdata/bad/extra_field.json is not a conformant record: record: unknown top-level key "invented_field" (the 33-field list is frozen; new capability goes inside a versioned envelope, never as a new top-level field)

@@ -167,6 +167,38 @@ func writeFixtureFiles(t *testing.T, f *sealedFixture) (recordPath, pubkeyPath s
 	return recordPath, pubkeyPath
 }
 
+// resealed mutates the given record (via cb) and SIGNS IT AGAIN with the
+// fixture's key, returning the JSON bytes. This models a producer that emitted
+// the record this way: the signature is valid, so whatever the verifier says
+// about it is about the record's content, not about tampering.
+//
+// Since v1.2.0 the signature is checked before conformance, so a test about a
+// field rule needs a record signed with the field already broken. Without
+// resealing, the verdict would be FAILS_VERIFICATION, correctly, and the test
+// would no longer reach the rule it is about.
+func resealed(t *testing.T, f *sealedFixture, cb func(p *verifycore.Record)) []byte {
+	t.Helper()
+	cp := *f.record
+	cb(&cp)
+	cp.SigningAttestation = ""
+	unsigned, err := cp.ToJSON()
+	if err != nil {
+		t.Fatalf("ToJSON: %v", err)
+	}
+	hash, err := verifycore.RecordHashFromBytes(unsigned)
+	if err != nil {
+		t.Fatalf("record hash: %v", err)
+	}
+	if cp.SigningAttestation, err = f.signer.Sign(hash); err != nil {
+		t.Fatalf("sign: %v", err)
+	}
+	data, err := cp.ToJSON()
+	if err != nil {
+		t.Fatalf("ToJSON: %v", err)
+	}
+	return data
+}
+
 // reSerializeTampered mutates the given record (via cb) WITHOUT re-signing
 // and returns the JSON bytes. This models an adversary editing the record
 // payload after signing.
@@ -358,9 +390,16 @@ func TestLoadRecord_Valid(t *testing.T) {
 	if err := os.WriteFile(path, f.recordJSON, 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	_, p, err := loadRecord(path)
+	raw, err := loadRecord(path)
 	if err != nil {
 		t.Fatalf("loadRecord: %v", err)
+	}
+	if !bytes.Equal(raw, f.recordJSON) {
+		t.Fatal("loadRecord must return the file's bytes unchanged; they are what gets hashed")
+	}
+	p, err := verifycore.RecordFromJSON(raw)
+	if err != nil {
+		t.Fatalf("RecordFromJSON: %v", err)
 	}
 	if p.RecordID != f.record.RecordID {
 		t.Fatalf("record_id mismatch: got %s want %s", p.RecordID, f.record.RecordID)
@@ -375,7 +414,7 @@ func TestLoadRecord_Valid(t *testing.T) {
 
 func TestLoadRecord_FileNotFound(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "nope.json")
-	_, _, err := loadRecord(missing)
+	_, err := loadRecord(missing)
 	if err == nil {
 		t.Fatal("expected error for missing file")
 	}
@@ -389,7 +428,7 @@ func TestLoadRecord_MalformedJSON(t *testing.T) {
 	if err := os.WriteFile(path, []byte("this is not json"), 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	_, _, err := loadRecord(path)
+	_, err := loadRecord(path)
 	if err == nil {
 		t.Fatal("expected error for malformed JSON")
 	}
@@ -411,7 +450,7 @@ func TestLoadRecord_EmptyFile(t *testing.T) {
 	if err := os.WriteFile(path, []byte{}, 0o644); err != nil {
 		t.Fatalf("write: %v", err)
 	}
-	_, _, err := loadRecord(path)
+	_, err := loadRecord(path)
 	if err == nil {
 		t.Fatal("expected error for empty file")
 	}
@@ -556,43 +595,76 @@ func TestVerifyRecord_EmptySigningAttestation(t *testing.T) {
 
 func TestVerifyRecord_UnsupportedVersion(t *testing.T) {
 	f := createSealedRecordFixture(t)
-	p := *f.record
-	p.RecordVersion = "2.0.0"
-	result, err := verifyStructAsArtifact(t, &p, f.publicKeyHex, "", nil)
+	raw := resealed(t, f, func(p *verifycore.Record) { p.RecordVersion = "2.0.0" })
+	result, err := verifyRecord(raw, f.publicKeyHex, "", nil)
 	if err != nil {
 		t.Fatalf("verifyRecord: %v", err)
 	}
-	if result.Verified {
-		t.Fatal("expected Verified=false")
+	if result.Outcome != OutcomeCouldNotVerify {
+		t.Fatalf("outcome = %s, want %s", result.Outcome, OutcomeCouldNotVerify)
 	}
 	if !strings.Contains(result.FailureReason, "version") {
 		t.Fatalf("FailureReason should mention version, got %q", result.FailureReason)
 	}
+	if !result.SignatureValid {
+		t.Fatal("the signature is valid and the result must say so")
+	}
 }
 
-func TestVerifyRecord_MissingTierAField(t *testing.T) {
-	// Build a TIER-A record that fails ValidateTierA. Do this by zeroing
-	// a required field on a sealed fixture — we do NOT reseal, so the
-	// check failure fires before the signature check would have.
+// TestVerifyRecord_SignatureBeforeConformance pins the order both verifiers
+// share. A record whose field breaks a rule is reported two different ways
+// depending on how it got that way, and both are the true thing to say:
+// signed like that, it is not a conformant record; edited after signing, it
+// was altered, and that is the more serious statement.
+func TestVerifyRecord_SignatureBeforeConformance(t *testing.T) {
 	f := createSealedRecordFixture(t)
-	p := *f.record
-	p.InputHash = "" // ValidateTierA rejects malformed input_hash
-	result, err := verifyStructAsArtifact(t, &p, f.publicKeyHex, "", nil)
+	breakIt := func(p *verifycore.Record) { p.InputHash = "" }
+
+	t.Run("signed with the broken field: not a conformant record", func(t *testing.T) {
+		result, err := verifyRecord(resealed(t, f, breakIt), f.publicKeyHex, "", nil)
+		if err != nil {
+			t.Fatalf("verifyRecord: %v", err)
+		}
+		if result.Outcome != OutcomeNotARecord {
+			t.Fatalf("outcome = %s, want %s (%s)", result.Outcome, OutcomeNotARecord, result.FailureReason)
+		}
+		if !strings.Contains(result.FailureReason, "TIER-A") {
+			t.Fatalf("FailureReason should mention TIER-A, got %q", result.FailureReason)
+		}
+		if !result.SignatureValid {
+			t.Fatal("the signature is valid and the result must say so")
+		}
+	})
+
+	t.Run("broken after signing: altered", func(t *testing.T) {
+		result, err := verifyRecord(reSerializeTampered(t, f.record, breakIt), f.publicKeyHex, "", nil)
+		if err != nil {
+			t.Fatalf("verifyRecord: %v", err)
+		}
+		if result.Outcome != OutcomeFailsVerification {
+			t.Fatalf("outcome = %s, want %s (%s)", result.Outcome, OutcomeFailsVerification, result.FailureReason)
+		}
+		for _, c := range result.Checks {
+			if strings.HasPrefix(c.Name, "TIER-A") {
+				t.Fatal("conformance must not be judged on bytes that are not what was signed")
+			}
+		}
+	})
+}
+
+// TestVerifyRecord_DeclaredKeyIsChecked: a record whose signature verifies
+// under your key while its signed signing_key_id names another key misstates
+// its own signer. Before v1.2.0 the key id was compared only after a failed
+// signature, so this record VERIFIED here while the page refused it.
+func TestVerifyRecord_DeclaredKeyIsChecked(t *testing.T) {
+	f := createSealedRecordFixture(t)
+	raw := resealed(t, f, func(p *verifycore.Record) { p.SigningKeyID = strings.Repeat("ab", 32) })
+	result, err := verifyRecord(raw, f.publicKeyHex, "", nil)
 	if err != nil {
 		t.Fatalf("verifyRecord: %v", err)
 	}
-	if result.Verified {
-		t.Fatal("expected Verified=false")
-	}
-	if !strings.Contains(result.FailureReason, "TIER-A") {
-		t.Fatalf("FailureReason should mention TIER-A, got %q", result.FailureReason)
-	}
-	// The failure must be detected at TIER-A Validation, before the
-	// signature check — so no Signature check is emitted.
-	for _, c := range result.Checks {
-		if c.Name == "Signature" {
-			t.Fatalf("signature check should not have run after TIER-A failure")
-		}
+	if result.Outcome != OutcomeUnknownKey {
+		t.Fatalf("outcome = %s, want %s", result.Outcome, OutcomeUnknownKey)
 	}
 }
 
@@ -1051,7 +1123,7 @@ func TestCLI_Verbose(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0. stderr=%q", code, stderr.String())
 	}
 	// Verbose includes check details.
-	if !strings.Contains(stdout.String(), "JSON parsed successfully") {
+	if !strings.Contains(stdout.String(), "read strictly") {
 		t.Fatalf("verbose output should include details: %q", stdout.String())
 	}
 	if !strings.Contains(stdout.String(), "Ed25519 signature valid") {
@@ -1178,10 +1250,11 @@ func TestVerify_UnsupportedVersion(t *testing.T) {
 	for _, version := range cases {
 		t.Run(version, func(t *testing.T) {
 			f := createSealedRecordFixture(t)
-			// Mutate the version on disk (without re-signing). The version
-			// check fires before signature verification, so the failure
-			// reason must be the version, not "signature does not match".
-			tampered := reSerializeTampered(t, f.record, func(p *verifycore.Record) {
+			// A record SIGNED with a version this binary does not know. Since
+			// v1.2.0 the signature is checked first, so an unsigned edit to the
+			// version is reported as altered; a newer producer's record is
+			// signed, and that is the case this is about.
+			tampered := resealed(t, f, func(p *verifycore.Record) {
 				p.RecordVersion = version
 			})
 			dir := t.TempDir()
@@ -1717,7 +1790,7 @@ func verifyStructAsArtifact(t *testing.T, p *verifycore.Record, pubHex, tsrPath 
 	if err != nil {
 		t.Fatalf("marshal record: %v", err)
 	}
-	return verifyRecord(raw, p, pubHex, tsrPath, roots)
+	return verifyRecord(raw, pubHex, tsrPath, roots)
 }
 
 // =============================================================================
@@ -2787,5 +2860,67 @@ func TestCLI_RejectionMessageHasNoSentinelPrefix(t *testing.T) {
 	run([]string{"--record", path, "--key-hex", f.publicKeyHex}, &stdout, &stderr)
 	if strings.Contains(stdout.String()+stderr.String(), "artifact rejected") {
 		t.Error("the internal sentinel leaked into user-facing output")
+	}
+}
+
+// TestVerifyRecord_OrderOfTheEarlyQuestions covers the questions asked before
+// the signature, each with the verdict the browser page gives for it.
+func TestVerifyRecord_OrderOfTheEarlyQuestions(t *testing.T) {
+	f := createSealedRecordFixture(t)
+
+	t.Run("missing an identifying field: not a record, nothing verified", func(t *testing.T) {
+		var d map[string]interface{}
+		_ = json.Unmarshal(f.recordJSON, &d)
+		delete(d, "record_id")
+		raw, _ := json.Marshal(d)
+		_, err := verifyRecord(raw, f.publicKeyHex, "", nil)
+		if err == nil || !isArtifactRejection(err) || !strings.Contains(err.Error(), "record_id") {
+			t.Fatalf("want an artifact rejection naming record_id, got %v", err)
+		}
+	})
+
+	t.Run("signing_key_id that is not a hex string: does not verify", func(t *testing.T) {
+		var d map[string]interface{}
+		_ = json.Unmarshal(f.recordJSON, &d)
+		d["signing_key_id"] = 42
+		raw, _ := json.Marshal(d)
+		r, err := verifyRecord(raw, f.publicKeyHex, "", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.Outcome != OutcomeFailsVerification || !strings.Contains(r.FailureReason, "signing_key_id") {
+			t.Fatalf("got %s (%s), want %s naming signing_key_id", r.Outcome, r.FailureReason, OutcomeFailsVerification)
+		}
+	})
+}
+
+// TestBatchJSON_RefusalCarriesItsOutcome: in a --json array, a record refused
+// at the strict read is a verdict, and says NOT_A_RECORD, as the single-record
+// object does. A file that could not be read has no outcome, because nothing
+// was checked. Before v1.2.0 both carried an empty outcome.
+func TestBatchJSON_RefusalCarriesItsOutcome(t *testing.T) {
+	f := createSealedRecordFixture(t)
+	dir := t.TempDir()
+	good := filepath.Join(dir, "good.json")
+	dup := filepath.Join(dir, "dup.json")
+	notJSON := filepath.Join(dir, "list.txt")
+	_ = os.WriteFile(good, f.recordJSON, 0o644)
+	_ = os.WriteFile(dup, append([]byte(`{"record_id":"x",`), f.recordJSON[1:]...), 0o644)
+	_ = os.WriteFile(notJSON, []byte("milk\neggs\n"), 0o644)
+
+	var stdout, stderr bytes.Buffer
+	run([]string{"--json", "--key-hex", f.publicKeyHex, good, dup, notJSON}, &stdout, &stderr)
+	var got []VerificationResult
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("batch --json is not an array: %v\n%s", err, stdout.String())
+	}
+	want := map[string]Outcome{good: OutcomeVerified, dup: OutcomeNotARecord, notJSON: ""}
+	for _, r := range got {
+		if r.Outcome != want[r.Path] {
+			t.Errorf("%s: outcome %q, want %q", filepath.Base(r.Path), r.Outcome, want[r.Path])
+		}
+	}
+	if len(got) != 3 {
+		t.Fatalf("want 3 results, got %d", len(got))
 	}
 }

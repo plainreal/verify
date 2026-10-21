@@ -10,15 +10,17 @@ Neither needs an account, an API call, or any PlainReal service. Save the page t
 your disk, disconnect from the network, and open it again; it works the same.
 That is the only honest way to check the claim.
 
-They exist as a pair on purpose. A release gate refuses to publish if they ever
-disagree about whether a record is sound, so a reader holding one can cross-check
-it against the other without asking us anything.
+They exist as a pair on purpose. Since v1.2.0 they check the same rules, in the
+same order, and a release gate refuses to publish if they give a different
+verdict on any record it tries. A reader holding one can cross-check it against
+the other without asking us anything.
 
-That gate reaches only as far as the overlap. The CLI checks more of a record
-than the page does (the table below says exactly how much more), so agreement
-covers the part they share and nothing beyond it. The part it covers best is
-the cryptography: the browser's Ed25519 is gated against Go's standard library
-across 76 adversarial cases, and neither of those was copied from the other.
+The gate covers the records it is run on, which is a claim about those records
+and not a proof about every possible one. The one thing only the CLI checks is
+an RFC 3161 timestamp token (the table below has the full comparison). The part
+the pairing covers best is the cryptography: the browser's Ed25519 is gated
+against Go's standard library across 76 adversarial cases, and neither of those
+was copied from the other.
 
 ---
 
@@ -195,8 +197,10 @@ increasing order of paranoia:
    browser: RFC 8785 canonicalization vectors, SHA3-256 and SHA-512
    known-answer tests, 76 Ed25519 cases including signature malleability and
    non-canonical key encodings, the curve algebra (`[L]B = O`, associativity,
-   encode/decode round-trips), and a cross-check against your own platform's
-   WebCrypto where it supports Ed25519.
+   encode/decode round-trips), the shared invariant cases in
+   `verifycore/testdata/invariant_vectors.json` that the CLI's own tests run,
+   and a cross-check against your own platform's WebCrypto where it supports
+   Ed25519.
 
 There is no analytics and no logging. One consequence worth stating: **we do
 not know how many people use this page.**
@@ -282,7 +286,7 @@ A record that verifies:
 ```
 $ plainreal-verify --record testdata/timestamped_record.json --key testdata/timestamped_record.pub.pem
 PlainReal Record Verification
-plainreal-verify 1.1.1  ·  record schema 1.0.0
+plainreal-verify 1.2.0  ·  record schema 1.0.0
 ─────────────────────────────────────────────────────
 
 THE RECORD
@@ -297,10 +301,12 @@ Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00
 
 WHAT WAS CHECKED
   [x] JSON Parse
-  [x] Record Version
-  [x] TIER-A Validation + Local Invariants
+  [x] Signing Key
   [x] Record Hash Computed
   [x] Signature
+  [x] Record Version
+  [x] Record Structure
+  [x] TIER-A Validation + Local Invariants
 
 VERIFIED
 
@@ -339,8 +345,8 @@ this file does not contain, and none of it was fetched or consulted:
 
   Also runs in a browser: https://verify.plainreal.com
   Source of both:         https://github.com/plainreal/verify
-  A release gate requires the two to agree wherever both check.
-  This tool checks more of a record than the page does.
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
   Nothing was contacted to produce this result.
 
 $ echo $?
@@ -352,7 +358,7 @@ The same record with one byte changed:
 ```
 $ plainreal-verify --record testdata/bad/tampered.json --key testdata/timestamped_record.pub.pem
 PlainReal Record Verification
-plainreal-verify 1.1.1  ·  record schema 1.0.0
+plainreal-verify 1.2.0  ·  record schema 1.0.0
 ─────────────────────────────────────────────────────
 
 THE RECORD
@@ -367,8 +373,7 @@ Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00
 
 WHAT WAS CHECKED
   [x] JSON Parse
-  [x] Record Version
-  [x] TIER-A Validation + Local Invariants
+  [x] Signing Key
   [x] Record Hash Computed
   [!] Signature: signature does not match record content
 
@@ -376,7 +381,7 @@ FAILED
 Reason: signature verification failed; record may have been tampered with
 
 This artifact could not be verified with the key you supplied.
-Any of these would produce that result:
+Either of these would produce that result:
   1. The record was modified after it was signed.
   2. The signature is not a signature over these bytes.
 
@@ -384,8 +389,8 @@ This tool cannot tell you which, and does not guess.
 
   Also runs in a browser: https://verify.plainreal.com
   Source of both:         https://github.com/plainreal/verify
-  A release gate requires the two to agree wherever both check.
-  This tool checks more of a record than the page does.
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
   Nothing was contacted to produce this result.
 
 $ echo $?
@@ -398,7 +403,7 @@ and the tool says so rather than implying tampering:
 ```
 $ plainreal-verify --record testdata/timestamped_record.json --key-hex 2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881
 PlainReal Record Verification
-plainreal-verify 1.1.1  ·  record schema 1.0.0
+plainreal-verify 1.2.0  ·  record schema 1.0.0
 ─────────────────────────────────────────────────────
 
 THE RECORD
@@ -408,27 +413,23 @@ Principal:       agent:credit-scoring-v2
 Action Type:     credit_decision
 Created:         2026-04-20T14:30:00.000000000Z
 Model:           openai / gpt-4-turbo-2024-04-09
-Record Hash:     28847586860d4195c0ca9e00dfcee6aa0d4ebe442a09f83e8a9b4014757026a2
 Signing Key ID:  dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b
 
 WHAT WAS CHECKED
   [x] JSON Parse
-  [x] Record Version
-  [x] TIER-A Validation + Local Invariants
-  [x] Record Hash Computed
-  [!] Signature: record declares signing_key_id dd0148d7d15aad9d…, the supplied key is e8a825047e13f637…
+  [!] Signing Key: record declares signing_key_id dd0148d7d15aad9d…, the supplied key is e8a825047e13f637…
 
 DIFFERENT SIGNING KEY
-Reason: signed by a different key: this is not the public key that signed this record, which is NOT the same as the record having been altered
+Reason: different key: the record names a signing key other than the one you supplied, which is NOT the same as the record having been altered
 
-This record was signed by a key other than the one you supplied.
+This record names a signing key other than the one you supplied.
 That is NOT a failed signature and NOT evidence of tampering.
-The record names the key that signed it; supply that key to check it.
+Supply the key it names to check it.
 
   Also runs in a browser: https://verify.plainreal.com
   Source of both:         https://github.com/plainreal/verify
-  A release gate requires the two to agree wherever both check.
-  This tool checks more of a record than the page does.
+  A release gate tests that the two give the same verdict.
+  This tool also checks an RFC 3161 token; the page does not.
   Nothing was contacted to produce this result.
 
 $ echo $?
@@ -440,7 +441,7 @@ Several records at once, each judged on its own:
 ```
 $ plainreal-verify --key testdata/timestamped_record.pub.pem testdata/timestamped_record.json testdata/bad/tampered.json
 PlainReal Record Verification
-plainreal-verify 1.1.1  ·  record schema 1.0.0
+plainreal-verify 1.2.0  ·  record schema 1.0.0
 =====================================================
 
   [x] testdata/timestamped_record.json
@@ -498,31 +499,67 @@ say where they stand:
 | Ed25519 signature against the key you supply | yes | yes |
 | The 33-field set, frozen, no additions or omissions | yes | yes |
 | Rejects duplicate JSON keys and unsafe integers | yes | yes |
-| Field values: enums, UUIDs, hex formats, UTC-strict times | no | yes |
-| Local invariants decidable from one record | **0 of 12** | **12 of 12** |
+| Field values: enums, UUIDs, hex formats, UTC-strict times | yes | yes |
+| Local invariants decidable from one record | **12 of 12** | **12 of 12** |
 | RFC 3161 timestamp against a root you supply | no | yes |
 | Several records in one run, each judged on its own | no | yes |
 | Follows a reference to a parent record | no | no |
 | Confirms the WORM lock | no | no |
 | Proves an omitted attempt was omitted | no | no |
 
-**The web verifier is not a Level-0 implementation.** It checks that the bytes
-are what was signed and that the document has the right shape. It does not read
-the contents for contradictions, so a record that is properly signed and
-internally inconsistent, one that says it chose from alternatives while listing
-none, gets a green result there and a refusal from the CLI. Closing that is the
-v1.2.0 goal; until then this table is the honest statement of where they differ,
-and the CLI is the one to reach for when the verdict has to be complete.
+Field values and invariants are checked for a TIER-A record, in both. The rules
+are written for TIER-A, so a TIER-B or TIER-C record is checked for its
+signature and its field types only, and both say so.
+
+**Two implementations, one set of cases.** The page's checks are written in
+JavaScript from the record specification, not translated from the Go, and both
+are held to `verifycore/testdata/invariant_vectors.json`: the Go tests run it,
+and so does the page's own test suite, which you can run yourself. Until v1.2.0
+the page checked only the signature and the field names, so a record that was
+properly signed and said it chose from alternatives while listing none got a
+green result there and a refusal from the CLI. They now agree on it.
+
+Both check the signature before the fields. A record edited after signing is
+reported as altered, even when the edit also broke a rule, because that is the
+more serious true statement; a record signed with a broken field is reported as
+not conformant, and both say the signature itself is valid.
 
 The last three rows are "no" in both columns, and always will be. Those are the
 boundary, not a backlog.
+
+### Verdicts that changed in v1.2.0
+
+If you script against the exit code or `--json`, these records get a different
+answer from v1.2.0 than from v1.1.x. Each change makes the two tools agree, and
+each follows the record specification.
+
+- **The signature is checked before the fields.** A record edited after signing
+  is `FAILS_VERIFICATION`, even when the edit also broke a field rule. It was
+  `NOT_A_RECORD`.
+- **The record's `signing_key_id` is compared with your key first.** A record
+  that names a different key is `UNKNOWN_KEY`, even if its signature verifies
+  under your key, because it then misstates its own signer. It was `VERIFIED`.
+- **A malformed `signing_attestation` or `signing_key_id`**, empty included, is
+  `FAILS_VERIFICATION`. It was `COULD_NOT_VERIFY` or `NOT_A_RECORD`, and below
+  TIER-A an empty key id was not checked at all.
+- **Refused now, sometimes accepted before:** a record missing a top-level
+  field (for TIER-A, three fields slipped through; below TIER-A, any); `null`
+  where the schema does not allow it (only the model and retrieval `params`
+  do); a UUID that is not version 4; a key that differs from a field name only
+  in letter case; a number that cannot be canonicalized, wherever it is,
+  `signing_attestation` included.
+- **Accepted now, refused before:** an envelope `schema_version` of any `1.x.y`,
+  not only `1.0.0`, so a newer producer's record verifies; and edges whose
+  selectors hold a byte below 0x1F, which were wrongly reported as unsorted.
+- **`--json` with several records:** a record refused when it was read now
+  carries `"outcome": "NOT_A_RECORD"`. It carried none.
 
 ### Building it, and checking the binary
 
 The quickest route, if you have Go:
 
 ```bash
-go install github.com/plainreal/verify/cmd/plainreal-verify@v1.1.1
+go install github.com/plainreal/verify/cmd/plainreal-verify@v1.2.0
 ```
 
 That builds from source the Go module proxy fetched by tag, so there is no
@@ -547,7 +584,7 @@ only as trustworthy as whoever can write there. The signed tag is the check
 that does not have that problem:
 
 ```bash
-git tag -v v1.1.1        # the signature, and the binary hashes
+git tag -v v1.2.0        # the signature, and the binary hashes
 shasum -a 256 plainreal-verify-*         # compare against the tag message
 ```
 
@@ -570,7 +607,7 @@ printf 'swapan@plainreal.com %s\n' "$(cat /tmp/plainreal.pub)" \
   >> ~/.ssh/allowed_signers
 
 git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
-git tag -v v1.1.1
+git tag -v v1.2.0
 ```
 
 That key is published by GitHub, on an account separate from this repository,
@@ -587,9 +624,9 @@ our published hash becomes something you can confirm for yourself.
 
 ```bash
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-  go build -trimpath -ldflags="-buildid= -X main.Version=1.1.1" \
-  -o plainreal-verify-1.1.1-linux-amd64 ./cmd/plainreal-verify
-shasum -a 256 plainreal-verify-1.1.1-linux-amd64
+  go build -trimpath -ldflags="-buildid= -X main.Version=1.2.0" \
+  -o plainreal-verify-1.2.0-linux-amd64 ./cmd/plainreal-verify
+shasum -a 256 plainreal-verify-1.2.0-linux-amd64
 ```
 
 Set `GOOS` and `GOARCH` to the target you want: `darwin/arm64`,
@@ -620,11 +657,11 @@ network and no TSA account.
 That command prints two figures, and those are the ones to check us on:
 
 ```
-ok  github.com/plainreal/verify/cmd/plainreal-verify   coverage: 91.9% of statements
-ok  github.com/plainreal/verify/verifycore   coverage: 80.4% of statements
+ok  github.com/plainreal/verify/cmd/plainreal-verify   coverage: 91.4% of statements
+ok  github.com/plainreal/verify/verifycore   coverage: 87.0% of statements
 ```
 
-Merged across both, 86.5%, which you can reproduce with
+Merged across both, 89.0%, which you can reproduce with
 `go test ./... -coverprofile=cov.out -coverpkg=./... && go tool cover -func=cov.out`.
 We print the commands so you can run them yourself, and the figure comes with
 two caveats.
@@ -746,8 +783,8 @@ Each release publishes the SHA-256 of `public/index.html` in its signed git tag
 and here:
 
 ```
-v1.1.1   sha256(public/index.html)
-         f3dd80526c0c31b08b50a94b91156af1c2002f349b4270c1e727f5dc8188b690
+v1.2.0   sha256(public/index.html)
+         ca8c6f417d2e644ec550c6eedff3a43cbf1039131aa1c0fe48eecd7cf281b368
 ```
 
 Check a copy against it:
@@ -760,7 +797,7 @@ The output is the hash then the filename, and the hash is what you compare
 against the block above:
 
 ```
-f3dd80526c0c31b08b50a94b91156af1c2002f349b4270c1e727f5dc8188b690  the-file-you-were-given.html
+ca8c6f417d2e644ec550c6eedff3a43cbf1039131aa1c0fe48eecd7cf281b368  the-file-you-were-given.html
 ```
 
 If the two strings are not identical, character for character, do not trust it. Get it from
@@ -784,7 +821,7 @@ hash. That is expected and is not a sign of tampering: such a copy is
 functionally identical and verifies records exactly the same way. It is simply
 not the published bytes, so the published hash says nothing about it.
 
-The release tags are signed. `git tag -v v1.1.1` verifies the signature, and
+The release tags are signed. `git tag -v v1.2.0` verifies the signature, and
 the commits are signed too.
 
 ---

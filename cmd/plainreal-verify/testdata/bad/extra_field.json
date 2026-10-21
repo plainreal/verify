@@ -92,6 +92,7 @@
   },
   "input_hash": "9c195c999e72720b34b3e120491a8aa09ccfc0a71f5f0fd2c449a8035e37e2a9",
   "instrumentation_coverage": 1,
+  "invented_field": "nope",
   "lock_verification_latency_ms": 47,
   "model_name": "gpt-4-turbo-2024-04-09",
   "model_provider": "openai",
@@ -123,8 +124,8 @@
   "registry_validation_status": "VALIDATED",
   "sdk_binary_sha3": "a0f6740c924480cea76eef2e4f0434c9aba7ff868c8076de4921c56e263555b0",
   "sdk_hash_layer": "SERVICE_ENDPOINT",
-  "signing_attestation": "d5d94d81664f35d5c265ca3a098ae4f1c5397f8a76a21e38795cbb59ab05460981402b4a5cad3128c72ae77a7f5b9bf8293a6bea71857969895e4c0508eb3d0f",
-  "signing_key_id": "dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b",
+  "signing_attestation": "d754e5154167861495aa114ea409f2672c867271f74a52b87562a83e1e342b56e70e15e5d05a4c6cb922a9d09737d52252e19c433022dc4c0c6cc18f6e821106",
+  "signing_key_id": "77e66b897912fbaee29bee34cf1560c8045896bb3abf7588e63bb16c2ce84fef",
   "tool_call_log": [
     {
       "ended_at": "2026-04-20T14:30:01.298Z",
@@ -146,6 +147,5 @@
       "tool": "risk_model",
       "tool_version": "1.0.4"
     }
-  ],
-  "invented_field": "nope"
+  ]
 }

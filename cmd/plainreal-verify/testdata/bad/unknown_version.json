@@ -123,8 +123,8 @@
   "registry_validation_status": "VALIDATED",
   "sdk_binary_sha3": "a0f6740c924480cea76eef2e4f0434c9aba7ff868c8076de4921c56e263555b0",
   "sdk_hash_layer": "SERVICE_ENDPOINT",
-  "signing_attestation": "d5d94d81664f35d5c265ca3a098ae4f1c5397f8a76a21e38795cbb59ab05460981402b4a5cad3128c72ae77a7f5b9bf8293a6bea71857969895e4c0508eb3d0f",
-  "signing_key_id": "dd0148d7d15aad9de768519ff0e1abcc0abb27e905d276b934a44cb936ccb00b",
+  "signing_attestation": "9c26cfe6b973e2033c1e22619042c6a5417774635994f7c3f6e56d7fbe47a5fad396e7fc5089a9f610ec8759e76b6e17c663e6c8f0e78ee195bd226e95704407",
+  "signing_key_id": "77e66b897912fbaee29bee34cf1560c8045896bb3abf7588e63bb16c2ce84fef",
   "tool_call_log": [
     {
       "ended_at": "2026-04-20T14:30:01.298Z",
